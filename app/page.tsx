@@ -1,41 +1,44 @@
 "use client"
 
 import { useState, useEffect} from "react";
-import { useDroppable, DndContext, DragOverlay } from '@dnd-kit/core';
-import { useSortable, SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { useDroppable, DndContext, DragOverlay, closestCorners } from '@dnd-kit/core';
+import { useSortable, SortableContext, verticalListSortingStrategy, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 export default function Home() {
   const [activeId, setActiveId] = useState(null);
-  const [cards, setCards] = useState([
-    { id: '1', columnId: 'todo', title: 'Design homepage', description: 'Create mockups' },
-    { id: '2', columnId: 'todo', title: 'Setup database', description: 'Create tables' },
-    { id: '3', columnId: 'inprogress', title: 'Build API', description: 'REST endpoints for boards' },
-    { id: '4', columnId: 'done', title: 'Project kickoff', description: 'Next.js setup' },
+
+  const [containers, setContainers] = useState([
+    {
+      id: 'todo',
+      title: 'To Do',
+      items: [
+        { id: '1', title: 'Design homepage', description: 'Create mockups' },
+        { id: '2', title: 'Setup database', description: 'Create tables' },
+        { id: '3', title: 'Build API', description: 'REST endpoints for boards' },
+      ]
+    },
+    {
+      id: 'inprogress',
+      title: 'In Progress',
+      items: [
+        {id: '4', title: 'Implement draggability', description: 'Understand Dnd-kit' },
+        {id: '5', title: 'Restructure containers', description: 'Use nested initial data in state' },
+      ]
+    },
+    {
+      id: 'done',
+      title: 'Done',
+      items: [
+        { id: '6', title: 'Project kickoff', description: 'Next.js setup' },
+        {id: '7', title: 'Initial commit', description: 'Setup repository' },
+      ]
+    }
   ]);
 
   const [isMounted, setIsMounted] = useState(false);
 
-  const columns = [
-    { id: 'todo', title: 'To Do' },
-    { id: 'inprogress', title: 'In Progress' },
-    { id: 'done', title: 'Done' }
-  ];
-
-  let newCards = [...cards];
-
-  function CardContent({card}: {card: {id: string; title: string; description: string}}) {
-    return (
-      <div>
-        <h3 className="text-black">{card.title}</h3>
-        {card.description && (
-          <p className="text-gray-700">{card.description}</p>
-        )}
-      </div>
-    );
-  }
-
-  function DroppableColumn({column, children}: {column: {id: string; title: string}, children: React.ReactNode}) {
+  function DroppableColumn({column, children}: {column: {id: string; title: string; items: {id: string; title: string; description: string}[]}, children: React.ReactNode}) {
     const { setNodeRef } = useDroppable({
       id: column.id
     });
@@ -44,6 +47,17 @@ export default function Home() {
       <div ref={setNodeRef} className="bg-gray-100 p-4 rounded-lg w-full min-h-140">
         <h2 className="font-semibold mb-4 text-black">{column.title}</h2>
         {children}
+      </div>
+    );
+  }
+
+  function CardContent({card}: {card: {id: string; title: string; description: string}}) {
+    return (
+      <div>
+        <h3 className="text-black">{card.title}</h3>
+        {card.description && (
+          <p className="text-gray-700">{card.description}</p>
+        )}
       </div>
     );
   }
@@ -78,48 +92,92 @@ export default function Home() {
     setActiveId(active.id);
   }
 
-  const handleDragOver = (event: any) => {
-    const { active, over } = event;
-    const overCard = cards.find(card => card.id === over?.id);
-    const overColumn = columns.find(column => column.id === over?.id);
-
+  const handleDragMove = (event: any) => {
+    const {active, over} = event;
     if(!over || active.id === over.id) return;
+    console.log('active:', active.id, 'over:', over?.id);
 
-    if(overCard){
-      const activeIndex = newCards.findIndex(card => card.id === active.id);
-      const overIndex = newCards.findIndex(card => card.id === over?.id);
-      const columnId = overCard.columnId;
+    const activeContainer = findValueOfItems(active.id, 'item');
+    const overContainer = findValueOfItems(over?.id, 'container') || findValueOfItems(over?.id, 'item');
 
-      if (activeIndex === -1 || overIndex === -1) return;
+    const activeContainerIndex = containers.findIndex(c => c.id === activeContainer?.id);
+    const overContainerIndex = containers.findIndex(c => c.id === overContainer?.id);
 
-      newCards[activeIndex] = { ...newCards[activeIndex], columnId };
+    const activeItemIndex = activeContainer?.items.findIndex(i => i.id === active.id)!;
+    const overItemIndex = overContainer?.items.findIndex(i => i.id === over?.id)!;
+
+    if(activeContainerIndex === overContainerIndex){
+      let newItems = [...containers];
+      newItems[activeContainerIndex].items = arrayMove(newItems[activeContainerIndex].items, activeItemIndex, overItemIndex);
+      setContainers(newItems);
     }
-    if(overColumn){
-      const activeIndex = newCards.findIndex(card => card.id === active.id);
-
-      if (activeIndex === -1) return;
-
-      newCards[activeIndex] = { ...newCards[activeIndex], columnId: overColumn.id };
+    else {
+      let newItems = [...containers];
+      const movedItem = newItems[activeContainerIndex].items.splice(activeItemIndex, 1)[0];
+      newItems[overContainerIndex].items.splice(overItemIndex, 0, movedItem);
+      setContainers(newItems);
     }
-  };
+  }
 
-  const handleDragEnd = (event: any) => {
-    const { active, over } = event;
+  // const handleDragOver = (event: any) => {
+  //   const { active, over } = event;
+  //   const overCard = cards.find(card => card.id === over?.id);
+  //   const overColumn = columns.find(column => column.id === over?.id);
+
+  //   if(!over || active.id === over.id) return;
+
+  //   if(overCard){
+  //     const activeIndex = newCards.findIndex(card => card.id === active.id);
+  //     const overIndex = newCards.findIndex(card => card.id === over?.id);
+  //     const columnId = overCard.columnId;
+
+  //     if (activeIndex === -1 || overIndex === -1) return;
+
+  //     newCards[activeIndex] = { ...newCards[activeIndex], columnId };
+  //   }
+  //   if(overColumn){
+  //     const activeIndex = newCards.findIndex(card => card.id === active.id);
+
+  //     if (activeIndex === -1) return;
+
+  //     newCards[activeIndex] = { ...newCards[activeIndex], columnId: overColumn.id };
+  //   }
+  // };
+
+  // const handleDragEnd = (event: any) => {
+  //   const { active, over } = event;
     
-    if (!over || active.id === over.id) return;
+  //   if (!over || active.id === over.id) return;
 
-    const overCard = cards.find(card => card.id === over?.id);
-    if(overCard){
-      const activeCardIndex = cards.findIndex(card => card.id === active.id);
-      const overCardIndex = cards.findIndex(card => card.id === over?.id);
-      newCards = arrayMove(newCards, activeCardIndex, overCardIndex);
+  //   const overCard = cards.find(card => card.id === over?.id);
+  //   if(overCard){
+  //     const activeCardIndex = cards.findIndex(card => card.id === active.id);
+  //     const overCardIndex = cards.findIndex(card => card.id === over?.id);
+  //     newCards = arrayMove(newCards, activeCardIndex, overCardIndex);
+  //   }
+
+  //   console.log('newCards:', newCards);
+  //   setCards(newCards);
+
+  //   setActiveId(null);
+  // };
+
+  function findItem(id: string) {
+    const allItems = containers.flatMap(c => c.items);
+    const foundItem = allItems.find(item => item.id === id);
+    return foundItem;
+  }
+
+  function findValueOfItems(id: string | undefined, type: string) {
+    if (type === 'container') {
+      return containers.find((item) => item.id === id);
     }
-
-    console.log('newCards:', newCards);
-    setCards(newCards);
-
-    setActiveId(null);
-  };
+    if (type === 'item') {
+      return containers.find((container) =>
+        container.items.find((item) => item.id === id),
+      );
+    }
+  }
 
   useEffect(() => {
     setIsMounted(true);
@@ -130,30 +188,53 @@ export default function Home() {
   }
 
   return (
-    <DndContext onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+    // <DndContext onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+    //   <div className="p-8">
+    //     <h1 className="text-2xl font-bold mb-8">Kanban Board</h1>
+    //     <SortableContext items={cards.map(c => c.id)} strategy={verticalListSortingStrategy}>
+    //       <div className="grid grid-cols-3 gap-4">
+    //         {columns.map(column => {
+    //           const columnCards = cards.filter(card => card.columnId === column.id);
+
+    //           return (
+    //             <DroppableColumn key={column.id} column={column}>
+    //               {columnCards.map(card => (
+    //                 <SortableCard key={card.id} card={card} />
+    //               ))}
+    //             </DroppableColumn>
+    //           );})
+    //         }
+    //       </div>
+    //     </SortableContext>
+    //   </div>
+
+    //   <DragOverlay>
+    //    {activeId ? <CardContent card={cards.find(card => card.id === activeId)!} /> : null}
+    //   </DragOverlay>
+    // </DndContext>
+
+
+    <DndContext onDragStart={handleDragStart} onDragMove={handleDragMove} collisionDetection={closestCorners}>
       <div className="p-8">
         <h1 className="text-2xl font-bold mb-8">Kanban Board</h1>
         <div className="flex gap-4 justify-between">
-          {columns.map(column => {
-            const columnCards = cards.filter(card => card.columnId === column.id);
-            
-            return (
+          {
+            containers.map(column => (
               <DroppableColumn key={column.id} column={column}>
-                <SortableContext 
-                  items={columnCards.map(c => c.id)} 
-                  strategy={verticalListSortingStrategy}
-                >
-                  {columnCards.map(card => (
-                    <SortableCard key={card.id} card={card} />
-                  ))}
+                <SortableContext items={column.items.map(item => item.id)}>
+                  {
+                    column.items.map(card => (
+                      <SortableCard key={card.id} card={card} />
+                    ))
+                  }
                 </SortableContext>
               </DroppableColumn>
-            );
-          })}
+            ))
+          }
         </div>
       </div>
       <DragOverlay>
-        {activeId ? <CardContent card={cards.find(card => card.id === activeId)!} /> : null}
+        {activeId ? <CardContent card={findItem(activeId)!} /> : null}
       </DragOverlay>
     </DndContext>
   );
