@@ -2,7 +2,7 @@
 
 import { useState, useEffect} from "react";
 import { useDroppable, DndContext, DragOverlay, closestCorners } from '@dnd-kit/core';
-import { useSortable, SortableContext, verticalListSortingStrategy, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
+import { useSortable, SortableContext, verticalListSortingStrategy, arrayMove} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 export default function Home() {
@@ -93,74 +93,76 @@ export default function Home() {
   }
 
   const handleDragMove = (event: any) => {
-    const {active, over} = event;
-    if(!over || active.id === over.id) return;
-    console.log('active:', active.id, 'over:', over?.id);
+    const { active, over } = event;
+    
+    if (!over || active.id === over.id) return;
 
     const activeContainer = findValueOfItems(active.id, 'item');
     const overContainer = findValueOfItems(over?.id, 'container') || findValueOfItems(over?.id, 'item');
+    
+    if (!activeContainer || !overContainer) return;
 
-    const activeContainerIndex = containers.findIndex(c => c.id === activeContainer?.id);
-    const overContainerIndex = containers.findIndex(c => c.id === overContainer?.id);
+    const activeContainerIndex = containers.findIndex(c => c.id === activeContainer.id);
+    const overContainerIndex = containers.findIndex(c => c.id === overContainer.id);
+    
+    const activeItemIndex = activeContainer.items.findIndex(i => i.id === active.id);
+    
+    // FIX: Check if over.id is a card or a column
+    const isOverCard = findValueOfItems(over.id, 'item') !== undefined;
+    const overItemIndex = isOverCard
+      ? overContainer.items.findIndex(i => i.id === over.id)
+      : overContainer.items.length; // Insert at end if over empty column space
+    
+    // OPTIMIZATION: Check if anything actually changed
+    const isSameContainer = activeContainerIndex === overContainerIndex;
+    const isSamePosition = isSameContainer && activeItemIndex === overItemIndex;
+    
+    if (isSamePosition) return;
 
-    const activeItemIndex = activeContainer?.items.findIndex(i => i.id === active.id)!;
-    const overItemIndex = overContainer?.items.findIndex(i => i.id === over?.id)!;
-
-    if(activeContainerIndex === overContainerIndex){
-      let newItems = [...containers];
-      newItems[activeContainerIndex].items = arrayMove(newItems[activeContainerIndex].items, activeItemIndex, overItemIndex);
-      setContainers(newItems);
-    }
-    else {
-      let newItems = [...containers];
-      const movedItem = newItems[activeContainerIndex].items.splice(activeItemIndex, 1)[0];
+    if(!isSameContainer){
+      const newItems = [...containers];
+      const [movedItem] = newItems[activeContainerIndex].items.splice(activeItemIndex, 1);
       newItems[overContainerIndex].items.splice(overItemIndex, 0, movedItem);
       setContainers(newItems);
     }
-  }
+  };
 
-  // const handleDragOver = (event: any) => {
-  //   const { active, over } = event;
-  //   const overCard = cards.find(card => card.id === over?.id);
-  //   const overColumn = columns.find(column => column.id === over?.id);
-
-  //   if(!over || active.id === over.id) return;
-
-  //   if(overCard){
-  //     const activeIndex = newCards.findIndex(card => card.id === active.id);
-  //     const overIndex = newCards.findIndex(card => card.id === over?.id);
-  //     const columnId = overCard.columnId;
-
-  //     if (activeIndex === -1 || overIndex === -1) return;
-
-  //     newCards[activeIndex] = { ...newCards[activeIndex], columnId };
-  //   }
-  //   if(overColumn){
-  //     const activeIndex = newCards.findIndex(card => card.id === active.id);
-
-  //     if (activeIndex === -1) return;
-
-  //     newCards[activeIndex] = { ...newCards[activeIndex], columnId: overColumn.id };
-  //   }
-  // };
-
-  // const handleDragEnd = (event: any) => {
-  //   const { active, over } = event;
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
     
-  //   if (!over || active.id === over.id) return;
+    if (!over || active.id === over.id) {
+      setActiveId(null);
+      return;
+    }
 
-  //   const overCard = cards.find(card => card.id === over?.id);
-  //   if(overCard){
-  //     const activeCardIndex = cards.findIndex(card => card.id === active.id);
-  //     const overCardIndex = cards.findIndex(card => card.id === over?.id);
-  //     newCards = arrayMove(newCards, activeCardIndex, overCardIndex);
-  //   }
+    const activeContainer = findValueOfItems(active.id, 'item');
+    const overContainer = findValueOfItems(over?.id, 'container') || findValueOfItems(over?.id, 'item');
+    
+    if (!activeContainer || !overContainer) {
+      setActiveId(null);
+      return;
+    }
 
-  //   console.log('newCards:', newCards);
-  //   setCards(newCards);
+    const activeItemIndex = activeContainer.items.findIndex(i => i.id === active.id);
+    const isOverCard = findValueOfItems(over.id, 'item') !== undefined;
+    const overItemIndex = isOverCard
+      ? overContainer.items.findIndex(i => i.id === over.id)
+      : overContainer.items.length;
+    
+    // Only update if item isn't already in correct position
+    if (activeItemIndex !== overItemIndex) {
+      const activeContainerIndex = containers.findIndex(c => c.id === activeContainer.id);
+      const newItems = [...containers];
+      newItems[activeContainerIndex].items = arrayMove(
+        newItems[activeContainerIndex].items,
+        activeItemIndex,
+        overItemIndex
+      );
+      setContainers(newItems);
+    }
 
-  //   setActiveId(null);
-  // };
+    setActiveId(null);
+  };
 
   function findItem(id: string) {
     const allItems = containers.flatMap(c => c.items);
@@ -188,40 +190,14 @@ export default function Home() {
   }
 
   return (
-    // <DndContext onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-    //   <div className="p-8">
-    //     <h1 className="text-2xl font-bold mb-8">Kanban Board</h1>
-    //     <SortableContext items={cards.map(c => c.id)} strategy={verticalListSortingStrategy}>
-    //       <div className="grid grid-cols-3 gap-4">
-    //         {columns.map(column => {
-    //           const columnCards = cards.filter(card => card.columnId === column.id);
-
-    //           return (
-    //             <DroppableColumn key={column.id} column={column}>
-    //               {columnCards.map(card => (
-    //                 <SortableCard key={card.id} card={card} />
-    //               ))}
-    //             </DroppableColumn>
-    //           );})
-    //         }
-    //       </div>
-    //     </SortableContext>
-    //   </div>
-
-    //   <DragOverlay>
-    //    {activeId ? <CardContent card={cards.find(card => card.id === activeId)!} /> : null}
-    //   </DragOverlay>
-    // </DndContext>
-
-
-    <DndContext onDragStart={handleDragStart} onDragMove={handleDragMove} collisionDetection={closestCorners}>
+    <DndContext onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd} collisionDetection={closestCorners}>
       <div className="p-8">
         <h1 className="text-2xl font-bold mb-8">Kanban Board</h1>
         <div className="flex gap-4 justify-between">
           {
             containers.map(column => (
               <DroppableColumn key={column.id} column={column}>
-                <SortableContext items={column.items.map(item => item.id)}>
+                <SortableContext items={column.items.map(item => item.id)} strategy={verticalListSortingStrategy}>
                   {
                     column.items.map(card => (
                       <SortableCard key={card.id} card={card} />
