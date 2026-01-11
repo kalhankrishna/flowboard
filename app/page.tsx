@@ -1,9 +1,12 @@
 "use client"
 
-import { useState, useEffect} from "react";
-import { useDroppable, DndContext, DragOverlay, closestCorners } from '@dnd-kit/core';
-import { useSortable, SortableContext, verticalListSortingStrategy, arrayMove} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { useState, useEffect, useId} from "react";
+import { DndContext, DragOverlay, closestCorners } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, arrayMove} from '@dnd-kit/sortable';
+import DroppableColumn from "./components/DroppableColumn";
+import SortableCard from "./components/SortableCard";
+import CardContent from "./components/CardContent";
+import CardModal from "./components/CardModal";
 
 export default function Home() {
   const [activeId, setActiveId] = useState(null);
@@ -36,55 +39,38 @@ export default function Home() {
     }
   ]);
 
-  const [isMounted, setIsMounted] = useState(false);
+  const [cardModal, setCardModal] = useState<{ open: boolean; columnId: string | null }>({
+    open: false,
+    columnId: null
+  });
 
-  function DroppableColumn({column, children}: {column: {id: string; title: string; items: {id: string; title: string; description: string}[]}, children: React.ReactNode}) {
-    const { setNodeRef } = useDroppable({
-      id: column.id
+  const id = useId();
+
+  //Event Handlers
+
+  function openCardModal(columnId: string) {
+    setCardModal({ open: true, columnId });
+  }
+
+  function closeCardModal() {
+    setCardModal({ open: false, columnId: null });
+  }
+
+  function addCardToColumn(columnId: string, card: {id: string; title: string; description: string}) {
+    setContainers(prevContainers => {
+      return prevContainers.map(column => {
+        if (column.id === columnId) {
+          return {
+            ...column,
+            items: [...column.items, card]
+          };
+        }
+        return column;
+      });
     });
-
-    return (
-      <div ref={setNodeRef} className="bg-gray-100 p-4 rounded-lg w-full min-h-140">
-        <h2 className="font-semibold mb-4 text-black">{column.title}</h2>
-        {children}
-      </div>
-    );
   }
 
-  function CardContent({card}: {card: {id: string; title: string; description: string}}) {
-    return (
-      <div>
-        <h3 className="text-black">{card.title}</h3>
-        {card.description && (
-          <p className="text-gray-700">{card.description}</p>
-        )}
-      </div>
-    );
-  }
-
-  function SortableCard({card}: {card: {id: string; title: string; description: string}}) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
-      id: card.id 
-    });
-
-    const style = {
-      transform: CSS.Transform.toString(transform),
-      transition,
-      opacity: isDragging ? 0.5 : 1,
-    };
-
-    return(
-      <div
-        ref={setNodeRef}
-        style={style}
-        {...attributes}
-        {...listeners}
-        className="p-2 bg-slate-300 rounded-md my-2 cursor-grab active:cursor-grabbing"
-      >
-        <CardContent card={card} />
-      </div>
-    );
-  }
+  //Drag Handlers
 
   const handleDragStart = (event: any) => {
     const {active} = event;
@@ -164,6 +150,9 @@ export default function Home() {
     setActiveId(null);
   };
 
+
+  //Helpers
+
   function findItem(id: string) {
     const allItems = containers.flatMap(c => c.items);
     const foundItem = allItems.find(item => item.id === id);
@@ -181,16 +170,8 @@ export default function Home() {
     }
   }
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
-    return <div>Loading...</div>;
-  }
-
   return (
-    <DndContext onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd} collisionDetection={closestCorners}>
+    <DndContext id={id} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd} collisionDetection={closestCorners}>
       <div className="p-8">
         <h1 className="text-2xl font-bold mb-8">Kanban Board</h1>
         <div className="flex gap-4 justify-between">
@@ -204,10 +185,18 @@ export default function Home() {
                     ))
                   }
                 </SortableContext>
+                <button onClick={() => openCardModal(column.id)} className="mt-4 bg-green-500 text-white p-2 rounded w-full">Add Card</button>
               </DroppableColumn>
             ))
           }
         </div>
+        {cardModal.open && cardModal.columnId && (
+          <CardModal 
+            columnId={cardModal.columnId}
+            addCardToColumn={addCardToColumn}
+            closeCardModal={closeCardModal}
+          />
+        )}
       </div>
       <DragOverlay>
         {activeId ? <CardContent card={findItem(activeId)!} /> : null}
