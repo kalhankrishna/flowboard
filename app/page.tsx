@@ -39,21 +39,38 @@ export default function Home() {
     }
   ]);
 
-  const [cardModal, setCardModal] = useState<{ open: boolean; columnId: string | null }>({
+  const [cardModal, setCardModal] = useState<{ 
+    open: boolean; 
+    mode: 'add' | 'edit' | null;
+    columnId: string | null;
+    cardId: string | null;
+  }>({
     open: false,
-    columnId: null
+    mode: null,
+    columnId: null,
+    cardId: null
   });
 
   const id = useId();
 
   //Event Handlers
 
-  function openCardModal(columnId: string) {
-    setCardModal({ open: true, columnId });
+  function openAddCardModal(columnId: string) {
+    setCardModal({ open: true, mode: 'add', columnId, cardId: null });
+  }
+
+  function openEditCardModal(cardId: string) {
+    const container = findValueOfItems(cardId, 'item');
+    setCardModal({ 
+      open: true, 
+      mode: 'edit', 
+      columnId: container?.id || null, 
+      cardId 
+    });
   }
 
   function closeCardModal() {
-    setCardModal({ open: false, columnId: null });
+    setCardModal({ open: false, mode: null, columnId: null, cardId: null });
   }
 
   function addCardToColumn(columnId: string, card: {id: string; title: string; description: string}) {
@@ -67,6 +84,28 @@ export default function Home() {
         }
         return column;
       });
+    });
+  }
+
+  function editCard(cardId: string, updatedCard: { title: string; description: string }) {
+    setContainers(prevContainers => {
+      return prevContainers.map(column => ({
+        ...column,
+        items: column.items.map(item => 
+          item.id === cardId 
+            ? { ...item, ...updatedCard }
+            : item
+        )
+      }));
+    });
+  }
+
+  function deleteCard(cardId: string) {
+    setContainers(prevContainers => {
+      return prevContainers.map(column => ({
+        ...column,
+        items: column.items.filter(item => item.id !== cardId)
+      }));
     });
   }
 
@@ -179,21 +218,28 @@ export default function Home() {
             containers.map(column => (
               <DroppableColumn key={column.id} column={column}>
                 <SortableContext items={column.items.map(item => item.id)} strategy={verticalListSortingStrategy}>
-                  {
-                    column.items.map(card => (
-                      <SortableCard key={card.id} card={card} />
-                    ))
-                  }
+                  {column.items.map(card => (
+                    <SortableCard 
+                      key={card.id} 
+                      card={card} 
+                      onEdit={openEditCardModal}
+                      onDelete={deleteCard}
+                    />
+                  ))}
                 </SortableContext>
-                <button onClick={() => openCardModal(column.id)} className="mt-4 bg-green-500 text-white p-2 rounded w-full">Add Card</button>
+                <button onClick={() => openAddCardModal(column.id)} className="mt-4 bg-green-500 text-white p-2 rounded w-full">Add Card</button>
               </DroppableColumn>
             ))
           }
         </div>
         {cardModal.open && cardModal.columnId && (
           <CardModal 
+            mode={cardModal.mode!}
             columnId={cardModal.columnId}
+            cardId={cardModal.cardId}
+            existingCard={cardModal.cardId ? findItem(cardModal.cardId) : undefined}
             addCardToColumn={addCardToColumn}
+            editCard={editCard}
             closeCardModal={closeCardModal}
           />
         )}
