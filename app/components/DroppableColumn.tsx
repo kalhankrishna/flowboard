@@ -1,16 +1,46 @@
 "use client"
 
-import { useDroppable } from "@dnd-kit/core";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from '@dnd-kit/utilities';
+import ColumnContent from "./ColumnContent";
 
-export default function DroppableColumn({column, children}: {column: {id: string; title: string; items: {id: string; title: string; description: string}[]}, children: React.ReactNode}) {
-    const { setNodeRef } = useDroppable({
-      id: column.id
+export default function DroppableColumn({column, onAddCard, onEdit, onDelete, children}: {column: {id: string; title: string; items: {id: string; title: string; description: string}[]}, onAddCard: (columnId: string) => void, onEdit: (columnId: string) => void, onDelete: (columnId: string) => void, children: React.ReactNode}) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
+      id: column.id 
     });
 
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
+    const handleAddCardClick = () => {
+      onAddCard(column.id);
+    }
+
+    const handleEditClick = () => {
+      onEdit(column.id);
+    };
+
+    const handleDeleteClick = () => {
+      if (window.confirm('Are you sure you want to delete this card?')) {
+        onDelete(column.id);
+      }
+    };
+
     return (
-      <div ref={setNodeRef} className="bg-gray-100 p-4 rounded-lg w-full min-h-140">
-        <h2 className="font-semibold mb-4 text-black">{column.title}</h2>
-        {children}
+      <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="group bg-gray-100 w-full p-4 rounded-lg shadow-md">
+        <div className="w-full min-h-100 cursor-grab active:cursor-grabbing">
+          <ColumnContent column={column}>
+            {children}
+          </ColumnContent>
+        </div>
+        <button onPointerDown={(e) => e.stopPropagation()} onClick={handleAddCardClick} className="opacity-0 group-hover:opacity-100 mt-4 bg-green-500 text-white p-2 rounded w-full">Add Card</button>
+        <div className="flex justify-between gap-12 opacity-0 group-hover:opacity-100 transition">
+          <button onPointerDown={(e) => e.stopPropagation()} onClick={handleEditClick} className="mt-4 bg-blue-500 text-white p-2 rounded w-full">Edit Column</button>
+          <button onPointerDown={(e) => e.stopPropagation()} onClick={handleDeleteClick} className="mt-4 bg-red-500 text-white p-2 rounded w-full">Delete Column</button>
+        </div>
       </div>
     );
 }

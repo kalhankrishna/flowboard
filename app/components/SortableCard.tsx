@@ -23,12 +23,11 @@ export default function SortableCard({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const handleEditClick = (e: React.MouseEvent) => {
+  const handleEditClick = () => {
     onEdit(card.id);
   };
 
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDeleteClick = () => {
     if (window.confirm('Are you sure you want to delete this card?')) {
       onDelete(card.id);
     }
@@ -40,21 +39,21 @@ export default function SortableCard({
       style={style}
       {...attributes}
       {...listeners}
-      className="group relative p-2 bg-slate-300 rounded-md my-2 cursor-grab active:cursor-grabbing"
+      className="group relative p-2 bg-slate-300 rounded-md my-2 shadow-md cursor-grab active:cursor-grabbing"
     >
       <CardContent card={card} />
 
       <button
         onPointerDown={(e) => e.stopPropagation()}
         onClick={handleEditClick}
-        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-blue-500 text-white px-2 py-1 rounded text-sm"
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-blue-500 text-white px-2 py-1 rounded text-sm transition"
       >
         Edit
       </button>
       <button
         onPointerDown={(e) => e.stopPropagation()}
         onClick={handleDeleteClick}
-        className="absolute top-2 right-14 opacity-0 group-hover:opacity-100 bg-red-500 text-white px-2 py-1 rounded text-sm"
+        className="absolute top-2 right-14 opacity-0 group-hover:opacity-100 bg-red-500 text-white px-2 py-1 rounded text-sm transition"
       >
         Delete
       </button>

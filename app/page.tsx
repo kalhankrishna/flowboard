@@ -1,12 +1,14 @@
 "use client"
 
-import { useState, useEffect, useId} from "react";
+import { useState, useId} from "react";
 import { DndContext, DragOverlay, closestCorners } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, arrayMove} from '@dnd-kit/sortable';
+import { SortableContext, verticalListSortingStrategy, arrayMove, horizontalListSortingStrategy} from '@dnd-kit/sortable';
 import DroppableColumn from "./components/DroppableColumn";
 import SortableCard from "./components/SortableCard";
 import CardContent from "./components/CardContent";
+import ColumnContent from "./components/ColumnContent";
 import CardModal from "./components/CardModal";
+import ColumnModal from "./components/ColumnModal";
 
 export default function Home() {
   const [activeId, setActiveId] = useState(null);
@@ -49,6 +51,16 @@ export default function Home() {
     mode: null,
     columnId: null,
     cardId: null
+  });
+
+  const [columnModal, setColumnModal] = useState<{ 
+    open: boolean; 
+    mode: 'add' | 'edit' | null;
+    columnId: string | null;
+  }>({
+    open: false,
+    mode: null,
+    columnId: null
   });
 
   const id = useId();
@@ -109,6 +121,44 @@ export default function Home() {
     });
   }
 
+  function openAddColumnModal() {
+    setColumnModal({ open: true, mode: 'add', columnId: null });
+  }
+
+  function openEditColumnModal(columnId: string) {
+    setColumnModal({ 
+      open: true, 
+      mode: 'edit', 
+      columnId: columnId, 
+    });
+  }
+
+  function closeColumnModal() {
+    setColumnModal({ open: false, mode: null, columnId: null });
+  }
+
+  function addColumn(column: {id: string; title: string}) {
+    setContainers(prevContainers => [...prevContainers, {...column, items: []}]);
+  }
+
+  function editColumn(columnId: string, updatedColumn: { title: string}) {
+    setContainers(prevContainers => (
+      prevContainers.map(column => 
+        column.id === columnId 
+          ? { ...column, ...updatedColumn } 
+          : column
+      )
+    ));
+  }
+
+  function deleteColumn(columnId: string) {
+    setContainers(prevContainers => (
+      prevContainers.filter(column => 
+        column.id !== columnId
+      )
+    ));
+  }
+
   //Drag Handlers
 
   const handleDragStart = (event: any) => {
@@ -131,14 +181,12 @@ export default function Home() {
     const overContainerIndex = containers.findIndex(c => c.id === overContainer.id);
     
     const activeItemIndex = activeContainer.items.findIndex(i => i.id === active.id);
-    
-    // FIX: Check if over.id is a card or a column
+
     const isOverCard = findValueOfItems(over.id, 'item') !== undefined;
     const overItemIndex = isOverCard
       ? overContainer.items.findIndex(i => i.id === over.id)
-      : overContainer.items.length; // Insert at end if over empty column space
-    
-    // OPTIMIZATION: Check if anything actually changed
+      : overContainer.items.length;
+
     const isSameContainer = activeContainerIndex === overContainerIndex;
     const isSamePosition = isSameContainer && activeItemIndex === overItemIndex;
     
@@ -160,7 +208,7 @@ export default function Home() {
       return;
     }
 
-    const activeContainer = findValueOfItems(active.id, 'item');
+    const activeContainer = findValueOfItems(active.id, 'container') ||findValueOfItems(active.id, 'item');
     const overContainer = findValueOfItems(over?.id, 'container') || findValueOfItems(over?.id, 'item');
     
     if (!activeContainer || !overContainer) {
@@ -170,6 +218,19 @@ export default function Home() {
 
     const activeItemIndex = activeContainer.items.findIndex(i => i.id === active.id);
     const isOverCard = findValueOfItems(over.id, 'item') !== undefined;
+    const isActiveCard = findValueOfItems(active.id, 'item') !== undefined;
+
+    if(!isActiveCard && activeContainer.id !== overContainer.id){
+      setContainers(prevContainers => (
+        arrayMove(prevContainers,
+          prevContainers.findIndex(c => c.id === activeContainer.id),
+          prevContainers.findIndex(c => c.id === overContainer.id)
+        )
+      ));
+      setActiveId(null);
+      return;
+    }
+
     const overItemIndex = isOverCard
       ? overContainer.items.findIndex(i => i.id === over.id)
       : overContainer.items.length;
@@ -212,25 +273,29 @@ export default function Home() {
   return (
     <DndContext id={id} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd} collisionDetection={closestCorners}>
       <div className="p-8">
-        <h1 className="text-2xl font-bold mb-8">Kanban Board</h1>
+        <h1 className="text-2xl font-bold mb-2">Kanban Board</h1>
+        <div className="flex justify-end">
+          <button onClick={openAddColumnModal} className="mb-4 bg-green-500 text-white p-2 rounded w-full max-w-40">Add Column</button>
+        </div>
         <div className="flex gap-4 justify-between">
-          {
-            containers.map(column => (
-              <DroppableColumn key={column.id} column={column}>
-                <SortableContext items={column.items.map(item => item.id)} strategy={verticalListSortingStrategy}>
-                  {column.items.map(card => (
-                    <SortableCard 
-                      key={card.id} 
-                      card={card} 
-                      onEdit={openEditCardModal}
-                      onDelete={deleteCard}
-                    />
-                  ))}
-                </SortableContext>
-                <button onClick={() => openAddCardModal(column.id)} className="mt-4 bg-green-500 text-white p-2 rounded w-full">Add Card</button>
-              </DroppableColumn>
-            ))
-          }
+          <SortableContext items={containers.map(column => column.id)} strategy={horizontalListSortingStrategy}>
+            {
+              containers.map(column => (
+                <DroppableColumn key={column.id} column={column} onAddCard={openAddCardModal} onEdit={openEditColumnModal} onDelete={deleteColumn}>
+                  <SortableContext items={column.items.map(item => item.id)} strategy={verticalListSortingStrategy}>
+                    {column.items.map(card => (
+                      <SortableCard 
+                        key={card.id} 
+                        card={card} 
+                        onEdit={openEditCardModal}
+                        onDelete={deleteCard}
+                      />
+                    ))}
+                  </SortableContext>
+                </DroppableColumn>
+              ))
+            }
+          </SortableContext>
         </div>
         {cardModal.open && cardModal.columnId && (
           <CardModal 
@@ -243,9 +308,35 @@ export default function Home() {
             closeCardModal={closeCardModal}
           />
         )}
+        {columnModal.open && (
+          <ColumnModal 
+            mode={columnModal.mode!}
+            columnId={columnModal.columnId}
+            existingColumn={columnModal.columnId ? findValueOfItems(columnModal.columnId, 'container') : undefined}
+            addColumn={addColumn}
+            editColumn={editColumn}
+            closeColumnModal={closeColumnModal}
+          />
+        )}
       </div>
       <DragOverlay>
-        {activeId ? <CardContent card={findItem(activeId)!} /> : null}
+        {activeId && findItem(activeId) && (
+          <div className="bg-slate-300 rounded-md my-2 p-2 shadow-md opacity-50">
+            <CardContent card={findItem(activeId)!} />
+          </div>
+        )}
+
+        {activeId && findValueOfItems(activeId, 'container') && (
+          <div className="bg-gray-100 p-4 rounded-lg w-full min-h-140 shadow-md opacity-50">
+            <ColumnContent column={findValueOfItems(activeId, 'container')!}>
+              {findValueOfItems(activeId, 'container')?.items.map(item => (
+                <div key={item.id} className="bg-slate-300 rounded-md my-2 p-2 shadow-md">
+                  <CardContent card={item} />
+                </div>
+              ))}
+            </ColumnContent>
+          </div>
+        )}
       </DragOverlay>
     </DndContext>
   );
