@@ -2,7 +2,7 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 
 const router = express.Router();
-const Prisma = new PrismaClient();
+const prisma = new PrismaClient();
 
 // POST /api/cards
 router.post("/", async (req, res)=>{
@@ -13,7 +13,7 @@ router.post("/", async (req, res)=>{
             return res.status(400).json({error: "Missing required fields: columnId, title, position"});
         }
 
-        const card = await Prisma.card.create({
+        const card = await prisma.card.create({
             data: {
                 columnId,
                 title,
@@ -40,7 +40,7 @@ router.patch("/:id", async (req, res)=>{
             .filter(([_, value]) => value !== undefined)
         );
         
-        const updatedCard = await Prisma.card.update({
+        const updatedCard = await prisma.card.update({
             where: { id },
             data: updatedData,
         });
@@ -61,7 +61,7 @@ router.patch("/:id", async (req, res)=>{
 router.delete("/:id", async (req, res)=>{
     try{
         const {id} = req.params;
-        await Prisma.card.delete({
+        await prisma.card.delete({
             where: {id}
         });
 
