@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import boardRoutes from './routes/boards';
 
 dotenv.config();
 
@@ -15,6 +16,9 @@ app.use(express.json());
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'FlowBoard API is running' });
 });
+
+//Routes
+app.use('/api/boards', boardRoutes);
 
 // Start server
 app.listen(PORT, () => {
