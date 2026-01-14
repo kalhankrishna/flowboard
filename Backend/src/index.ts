@@ -1,7 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import boardRoutes from './routes/boards';
+import boardRoutes from './routes/boards.js';
+import cardRoutes from './routes/cards.js';
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.get('/health', (req, res) => {
 
 //Routes
 app.use('/api/boards', boardRoutes);
+app.use('/api/cards', cardRoutes);
 
 // Start server
 app.listen(PORT, () => {
