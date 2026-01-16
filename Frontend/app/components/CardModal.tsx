@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { Card } from '@/types/board';
+import { Column } from '@/types/board';
+import { addCard, updateCard } from '@/lib/api';
 
 export default function CardModal({
   mode,
-  columnId,
+  column,
   cardId,
   existingCard,
   addCardToColumn,
@@ -13,7 +15,7 @@ export default function CardModal({
   closeCardModal
 }: {
   mode: 'add' | 'edit';
-  columnId: string;
+  column: Column;
   cardId: string | null;
   existingCard?: Card;
   addCardToColumn: (columnId: string, card: Card) => void;
@@ -39,23 +41,24 @@ export default function CardModal({
     if (!title.trim()) return;
     
     if (mode === 'add') {
-      // TEMPORARY: Create fake complete Card object for local state
-      // FB-022 will replace this with API call
-      const newCard: Card = {
-        id: crypto.randomUUID(), // Temporary - backend will generate real ID
-        columnId: columnId,
-        title: title.trim(),
-        description: description.trim() || null,
-        position: 0, // Temporary - backend will calculate
-        createdAt: new Date().toISOString(), // Temporary
-        updatedAt: new Date().toISOString()  // Temporary
-      };
-      addCardToColumn(columnId, newCard);
+      addCard(
+        column.id,
+        title.trim(),
+        description.trim() || null,
+        column.cards.length || 0
+      ).then(card => addCardToColumn(column.id, card));
     } else if (mode === 'edit' && cardId) {
-      editCard(cardId, {
-        title: title.trim(),
-        description: description.trim()
-      });
+      updateCard(
+        cardId,
+        title.trim(),
+        description.trim() || null,
+        existingCard ? existingCard.position : 0
+      ).then(updatedCard => 
+        editCard(cardId, {
+          title: updatedCard.title,
+          description: updatedCard.description || ''
+        })
+      );
     }
     
     setTitle('');

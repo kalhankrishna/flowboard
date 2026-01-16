@@ -296,7 +296,7 @@ export default function Home() {
         {cardModal.open && cardModal.columnId && (
           <CardModal 
             mode={cardModal.mode!}
-            columnId={cardModal.columnId}
+            column={findValueOfItems(cardModal.columnId, 'container')!}
             cardId={cardModal.cardId}
             existingCard={cardModal.cardId ? findItem(cardModal.cardId) : undefined}
             addCardToColumn={addCardToColumn}
