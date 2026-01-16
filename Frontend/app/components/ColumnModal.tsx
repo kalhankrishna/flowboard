@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { Column } from '@/types/board';
 
 export default function ColumnModal({
   mode,
@@ -12,14 +13,13 @@ export default function ColumnModal({
 }: {
   mode: 'add' | 'edit';
   columnId: string | null;
-  existingColumn?: { id: string; title: string };
-  addColumn: (column: { id: string; title: string }) => void;
+  existingColumn?: Column;
+  addColumn: (column: Column) => void;
   editColumn: (columnId: string, updatedColumn: { title: string }) => void;
   closeColumnModal: () => void;
 }) {
   const [title, setTitle] = useState(existingColumn?.title || '');
 
-  // Reset form when existingCard changes (switching between add/edit)
   useEffect(() => {
     if (existingColumn) {
       setTitle(existingColumn.title);
@@ -31,17 +31,23 @@ export default function ColumnModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim()) return; // Don't submit if title is empty
+    if (!title.trim()) return;
     
     if (mode === 'add') {
-      addColumn({
-        id: crypto.randomUUID(),
-        title
-      });
+      // TEMPORARY: Create fake complete Column object for local state
+      // FB-022 will replace this with API call
+      const newColumn: Column = {
+        id: crypto.randomUUID(), // Temporary
+        boardId: 'a770b5dc-8537-49fe-869d-7a0908f9b2d0', // Hardcoded for now
+        title: title.trim(),
+        position: 0, // Temporary
+        cards: [], // Start empty
+        createdAt: new Date().toISOString(), // Temporary
+        updatedAt: new Date().toISOString()  // Temporary
+      };
+      addColumn(newColumn);
     } else if (mode === 'edit' && columnId) {
-      editColumn(columnId, {
-        title
-      });
+      editColumn(columnId, { title: title.trim() });
     }
     
     setTitle('');

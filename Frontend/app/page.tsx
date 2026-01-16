@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useId} from "react";
+import { useState, useId, useEffect} from "react";
 import { DndContext, DragOverlay, closestCorners } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove, horizontalListSortingStrategy} from '@dnd-kit/sortable';
 import DroppableColumn from "./components/DroppableColumn";
@@ -9,37 +9,15 @@ import CardContent from "./components/CardContent";
 import ColumnContent from "./components/ColumnContent";
 import CardModal from "./components/CardModal";
 import ColumnModal from "./components/ColumnModal";
+import { getBoard } from "@/lib/api";
+import { Column } from "@/types/board";
+import { Card } from "@/types/board";
 
 export default function Home() {
   const [activeId, setActiveId] = useState(null);
 
-  const [containers, setContainers] = useState([
-    {
-      id: 'todo',
-      title: 'To Do',
-      items: [
-        { id: '1', title: 'Design homepage', description: 'Create mockups' },
-        { id: '2', title: 'Setup database', description: 'Create tables' },
-        { id: '3', title: 'Build API', description: 'REST endpoints for boards' },
-      ]
-    },
-    {
-      id: 'inprogress',
-      title: 'In Progress',
-      items: [
-        {id: '4', title: 'Implement draggability', description: 'Understand Dnd-kit' },
-        {id: '5', title: 'Restructure containers', description: 'Use nested initial data in state' },
-      ]
-    },
-    {
-      id: 'done',
-      title: 'Done',
-      items: [
-        { id: '6', title: 'Project kickoff', description: 'Next.js setup' },
-        {id: '7', title: 'Initial commit', description: 'Setup repository' },
-      ]
-    }
-  ]);
+  const [containers, setContainers] = useState<Column[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [cardModal, setCardModal] = useState<{ 
     open: boolean; 
@@ -72,7 +50,7 @@ export default function Home() {
   }
 
   function openEditCardModal(cardId: string) {
-    const container = findValueOfItems(cardId, 'item');
+    const container = findValueOfItems(cardId, 'card');
     setCardModal({ 
       open: true, 
       mode: 'edit', 
@@ -85,13 +63,13 @@ export default function Home() {
     setCardModal({ open: false, mode: null, columnId: null, cardId: null });
   }
 
-  function addCardToColumn(columnId: string, card: {id: string; title: string; description: string}) {
+  function addCardToColumn(columnId: string, card: Card) {
     setContainers(prevContainers => {
       return prevContainers.map(column => {
         if (column.id === columnId) {
           return {
             ...column,
-            items: [...column.items, card]
+            cards: [...column.cards, card]
           };
         }
         return column;
@@ -103,10 +81,10 @@ export default function Home() {
     setContainers(prevContainers => {
       return prevContainers.map(column => ({
         ...column,
-        items: column.items.map(item => 
-          item.id === cardId 
-            ? { ...item, ...updatedCard }
-            : item
+        cards: column.cards.map(card => 
+          card.id === cardId 
+            ? { ...card, ...updatedCard }
+            : card
         )
       }));
     });
@@ -116,7 +94,7 @@ export default function Home() {
     setContainers(prevContainers => {
       return prevContainers.map(column => ({
         ...column,
-        items: column.items.filter(item => item.id !== cardId)
+        cards: column.cards.filter(item => item.id !== cardId)
       }));
     });
   }
@@ -137,8 +115,8 @@ export default function Home() {
     setColumnModal({ open: false, mode: null, columnId: null });
   }
 
-  function addColumn(column: {id: string; title: string}) {
-    setContainers(prevContainers => [...prevContainers, {...column, items: []}]);
+  function addColumn(column: Column) {
+    setContainers(prevContainers => [...prevContainers, {...column, cards: []}]);
   }
 
   function editColumn(columnId: string, updatedColumn: { title: string}) {
@@ -172,20 +150,20 @@ export default function Home() {
     
     if (!over || active.id === over.id) return;
 
-    const activeContainer = findValueOfItems(active.id, 'item');
-    const overContainer = findValueOfItems(over?.id, 'container') || findValueOfItems(over?.id, 'item');
+    const activeContainer = findValueOfItems(active.id, 'card');
+    const overContainer = findValueOfItems(over?.id, 'container') || findValueOfItems(over?.id, 'card');
     
     if (!activeContainer || !overContainer) return;
 
     const activeContainerIndex = containers.findIndex(c => c.id === activeContainer.id);
     const overContainerIndex = containers.findIndex(c => c.id === overContainer.id);
     
-    const activeItemIndex = activeContainer.items.findIndex(i => i.id === active.id);
+    const activeItemIndex = activeContainer.cards.findIndex(i => i.id === active.id);
 
-    const isOverCard = findValueOfItems(over.id, 'item') !== undefined;
+    const isOverCard = findValueOfItems(over.id, 'card') !== undefined;
     const overItemIndex = isOverCard
-      ? overContainer.items.findIndex(i => i.id === over.id)
-      : overContainer.items.length;
+      ? overContainer.cards.findIndex(i => i.id === over.id)
+      : overContainer.cards.length;
 
     const isSameContainer = activeContainerIndex === overContainerIndex;
     const isSamePosition = isSameContainer && activeItemIndex === overItemIndex;
@@ -194,8 +172,8 @@ export default function Home() {
 
     if(!isSameContainer){
       const newItems = [...containers];
-      const [movedItem] = newItems[activeContainerIndex].items.splice(activeItemIndex, 1);
-      newItems[overContainerIndex].items.splice(overItemIndex, 0, movedItem);
+      const [movedItem] = newItems[activeContainerIndex].cards.splice(activeItemIndex, 1);
+      newItems[overContainerIndex].cards.splice(overItemIndex, 0, movedItem);
       setContainers(newItems);
     }
   };
@@ -208,17 +186,17 @@ export default function Home() {
       return;
     }
 
-    const activeContainer = findValueOfItems(active.id, 'container') ||findValueOfItems(active.id, 'item');
-    const overContainer = findValueOfItems(over?.id, 'container') || findValueOfItems(over?.id, 'item');
+    const activeContainer = findValueOfItems(active.id, 'container') ||findValueOfItems(active.id, 'card');
+    const overContainer = findValueOfItems(over?.id, 'container') || findValueOfItems(over?.id, 'card');
     
     if (!activeContainer || !overContainer) {
       setActiveId(null);
       return;
     }
 
-    const activeItemIndex = activeContainer.items.findIndex(i => i.id === active.id);
-    const isOverCard = findValueOfItems(over.id, 'item') !== undefined;
-    const isActiveCard = findValueOfItems(active.id, 'item') !== undefined;
+    const activeItemIndex = activeContainer.cards.findIndex(i => i.id === active.id);
+    const isOverCard = findValueOfItems(over.id, 'card') !== undefined;
+    const isActiveCard = findValueOfItems(active.id, 'card') !== undefined;
 
     if(!isActiveCard && activeContainer.id !== overContainer.id){
       setContainers(prevContainers => (
@@ -232,15 +210,15 @@ export default function Home() {
     }
 
     const overItemIndex = isOverCard
-      ? overContainer.items.findIndex(i => i.id === over.id)
-      : overContainer.items.length;
+      ? overContainer.cards.findIndex(i => i.id === over.id)
+      : overContainer.cards.length;
     
     // Only update if item isn't already in correct position
     if (activeItemIndex !== overItemIndex) {
       const activeContainerIndex = containers.findIndex(c => c.id === activeContainer.id);
       const newItems = [...containers];
-      newItems[activeContainerIndex].items = arrayMove(
-        newItems[activeContainerIndex].items,
+      newItems[activeContainerIndex].cards = arrayMove(
+        newItems[activeContainerIndex].cards,
         activeItemIndex,
         overItemIndex
       );
@@ -254,7 +232,7 @@ export default function Home() {
   //Helpers
 
   function findItem(id: string) {
-    const allItems = containers.flatMap(c => c.items);
+    const allItems = containers.flatMap(c => c.cards);
     const foundItem = allItems.find(item => item.id === id);
     return foundItem;
   }
@@ -263,11 +241,29 @@ export default function Home() {
     if (type === 'container') {
       return containers.find((item) => item.id === id);
     }
-    if (type === 'item') {
+    if (type === 'card') {
       return containers.find((container) =>
-        container.items.find((item) => item.id === id),
+        container.cards.find((card) => card.id === id),
       );
     }
+  }
+
+  // Effects
+
+  useEffect(() => {
+    getBoard('a770b5dc-8537-49fe-869d-7a0908f9b2d0')
+      .then(data => {
+        setContainers(data.columns);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load board:', err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return <div className="p-8">Loading board...</div>;
   }
 
   return (
@@ -282,8 +278,8 @@ export default function Home() {
             {
               containers.map(column => (
                 <DroppableColumn key={column.id} column={column} onAddCard={openAddCardModal} onEdit={openEditColumnModal} onDelete={deleteColumn}>
-                  <SortableContext items={column.items.map(item => item.id)} strategy={verticalListSortingStrategy}>
-                    {column.items.map(card => (
+                  <SortableContext items={column.cards.map(card => card.id)} strategy={verticalListSortingStrategy}>
+                    {column.cards.map(card => (
                       <SortableCard 
                         key={card.id} 
                         card={card} 
@@ -329,9 +325,9 @@ export default function Home() {
         {activeId && findValueOfItems(activeId, 'container') && (
           <div className="bg-gray-100 p-4 rounded-lg w-full min-h-140 shadow-md opacity-50">
             <ColumnContent column={findValueOfItems(activeId, 'container')!}>
-              {findValueOfItems(activeId, 'container')?.items.map(item => (
-                <div key={item.id} className="bg-slate-300 rounded-md my-2 p-2 shadow-md">
-                  <CardContent card={item} />
+              {findValueOfItems(activeId, 'container')?.cards.map(card => (
+                <div key={card.id} className="bg-slate-300 rounded-md my-2 p-2 shadow-md">
+                  <CardContent card={card} />
                 </div>
               ))}
             </ColumnContent>

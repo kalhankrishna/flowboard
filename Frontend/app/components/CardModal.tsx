@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { Card } from '@/types/board';
 
 export default function CardModal({
   mode,
@@ -14,19 +15,18 @@ export default function CardModal({
   mode: 'add' | 'edit';
   columnId: string;
   cardId: string | null;
-  existingCard?: { id: string; title: string; description: string };
-  addCardToColumn: (columnId: string, card: { id: string; title: string; description: string }) => void;
+  existingCard?: Card;
+  addCardToColumn: (columnId: string, card: Card) => void;
   editCard: (cardId: string, updatedCard: { title: string; description: string }) => void;
   closeCardModal: () => void;
 }) {
   const [title, setTitle] = useState(existingCard?.title || '');
   const [description, setDescription] = useState(existingCard?.description || '');
 
-  // Reset form when existingCard changes (switching between add/edit)
   useEffect(() => {
     if (existingCard) {
       setTitle(existingCard.title);
-      setDescription(existingCard.description);
+      setDescription(existingCard.description || '');
     } else {
       setTitle('');
       setDescription('');
@@ -36,18 +36,25 @@ export default function CardModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim()) return; // Don't submit if title is empty
+    if (!title.trim()) return;
     
     if (mode === 'add') {
-      addCardToColumn(columnId, {
-        id: crypto.randomUUID(),
-        title,
-        description
-      });
+      // TEMPORARY: Create fake complete Card object for local state
+      // FB-022 will replace this with API call
+      const newCard: Card = {
+        id: crypto.randomUUID(), // Temporary - backend will generate real ID
+        columnId: columnId,
+        title: title.trim(),
+        description: description.trim() || null,
+        position: 0, // Temporary - backend will calculate
+        createdAt: new Date().toISOString(), // Temporary
+        updatedAt: new Date().toISOString()  // Temporary
+      };
+      addCardToColumn(columnId, newCard);
     } else if (mode === 'edit' && cardId) {
       editCard(cardId, {
-        title,
-        description
+        title: title.trim(),
+        description: description.trim()
       });
     }
     

@@ -3,13 +3,14 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import CardContent from './CardContent';
+import { Card } from '@/types/board';
 
 export default function SortableCard({
   card,
   onEdit,
   onDelete
 }: {
-  card: { id: string; title: string; description: string };
+  card: Card;
   onEdit: (cardId: string) => void;
   onDelete: (cardId: string) => void;
 }) {
