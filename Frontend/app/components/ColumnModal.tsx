@@ -1,20 +1,23 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Column } from '@/types/board';
+import { Board, Column } from '@/types/board';
+import { addColumn, updateColumn } from '@/lib/api';
 
 export default function ColumnModal({
   mode,
+  board,
   columnId,
   existingColumn,
-  addColumn,
+  addColumnToState,
   editColumn,
   closeColumnModal
 }: {
   mode: 'add' | 'edit';
+  board: Board;
   columnId: string | null;
   existingColumn?: Column;
-  addColumn: (column: Column) => void;
+  addColumnToState: (column: Column) => void;
   editColumn: (columnId: string, updatedColumn: { title: string }) => void;
   closeColumnModal: () => void;
 }) {
@@ -34,20 +37,21 @@ export default function ColumnModal({
     if (!title.trim()) return;
     
     if (mode === 'add') {
-      // TEMPORARY: Create fake complete Column object for local state
-      // FB-022 will replace this with API call
-      const newColumn: Column = {
-        id: crypto.randomUUID(), // Temporary
-        boardId: 'a770b5dc-8537-49fe-869d-7a0908f9b2d0', // Hardcoded for now
-        title: title.trim(),
-        position: 0, // Temporary
-        cards: [], // Start empty
-        createdAt: new Date().toISOString(), // Temporary
-        updatedAt: new Date().toISOString()  // Temporary
-      };
-      addColumn(newColumn);
+      addColumn(
+        board.id,
+        title.trim(),
+        board.columns.length || 0
+      ).then(column => addColumnToState(column));
     } else if (mode === 'edit' && columnId) {
-      editColumn(columnId, { title: title.trim() });
+      updateColumn(
+        columnId,
+        title.trim(),
+        existingColumn ? existingColumn.position : 0
+      ).then(updatedColumn => 
+        editColumn(columnId, {
+          title: updatedColumn.title
+        })
+      );
     }
     
     setTitle('');

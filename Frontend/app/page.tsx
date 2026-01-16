@@ -10,10 +10,11 @@ import ColumnContent from "./components/ColumnContent";
 import CardModal from "./components/CardModal";
 import ColumnModal from "./components/ColumnModal";
 import { getBoard } from "@/lib/api";
-import { Column } from "@/types/board";
+import { Board, Column } from "@/types/board";
 import { Card } from "@/types/board";
 
 export default function Home() {
+  const [board, setBoard] = useState<Board>({} as Board);
   const [activeId, setActiveId] = useState(null);
 
   const [containers, setContainers] = useState<Column[]>([]);
@@ -248,11 +249,14 @@ export default function Home() {
     }
   }
 
+  const boardId = 'a770b5dc-8537-49fe-869d-7a0908f9b2d0';
+
   // Effects
 
   useEffect(() => {
-    getBoard('a770b5dc-8537-49fe-869d-7a0908f9b2d0')
+    getBoard(boardId)
       .then(data => {
+        setBoard(data);
         setContainers(data.columns);
         setLoading(false);
       })
@@ -307,9 +311,10 @@ export default function Home() {
         {columnModal.open && (
           <ColumnModal 
             mode={columnModal.mode!}
+            board={board}
             columnId={columnModal.columnId}
             existingColumn={columnModal.columnId ? findValueOfItems(columnModal.columnId, 'container') : undefined}
-            addColumn={addColumn}
+            addColumnToState={addColumn}
             editColumn={editColumn}
             closeColumnModal={closeColumnModal}
           />
