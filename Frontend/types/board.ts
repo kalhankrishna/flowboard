@@ -25,3 +25,16 @@ export interface Board {
   updatedAt: string;
   columns: Column[];
 }
+
+export interface ReorderColumn {
+  columnId: string;
+  cards: Array<{
+    id: string;
+    position: number;
+  }>;
+}
+
+export interface ColumnPosition {
+  id: string;
+  position: number;
+}

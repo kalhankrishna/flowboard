@@ -1,6 +1,4 @@
-import { Board } from '@/types/board';
-import { Column } from '@/types/board';
-import { Card } from '@/types/board';
+import { Board, Column, Card, ReorderColumn, ColumnPosition } from '@/types/board';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -13,6 +11,34 @@ export async function getBoard(boardId: string): Promise<Board> {
     throw new Error(`Failed to fetch board: ${response.statusText}`);
   }
   
+  return response.json();
+}
+
+export async function reorderBoard(columns: ReorderColumn[]): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/boards/reorder`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ columns })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to reorder board: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function reorderColumns(columns: ColumnPosition[]): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/boards/reorder-columns`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ columns })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to reorder columns: ${response.statusText}`);
+  }
+
   return response.json();
 }
 

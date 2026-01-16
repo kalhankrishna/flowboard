@@ -9,7 +9,7 @@ import CardContent from "./components/CardContent";
 import ColumnContent from "./components/ColumnContent";
 import CardModal from "./components/CardModal";
 import ColumnModal from "./components/ColumnModal";
-import { getBoard } from "@/lib/api";
+import { getBoard, reorderBoard, reorderColumns } from "@/lib/api";
 import { Board, Column } from "@/types/board";
 import { Card } from "@/types/board";
 
@@ -179,7 +179,7 @@ export default function Home() {
     }
   };
 
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = async (event: any) => {
     const { active, over } = event;
     
     if (!over || active.id === over.id) {
@@ -187,7 +187,7 @@ export default function Home() {
       return;
     }
 
-    const activeContainer = findValueOfItems(active.id, 'container') ||findValueOfItems(active.id, 'card');
+    const activeContainer = findValueOfItems(active.id, 'container') || findValueOfItems(active.id, 'card');
     const overContainer = findValueOfItems(over?.id, 'container') || findValueOfItems(over?.id, 'card');
     
     if (!activeContainer || !overContainer) {
@@ -195,35 +195,104 @@ export default function Home() {
       return;
     }
 
-    const activeItemIndex = activeContainer.cards.findIndex(i => i.id === active.id);
-    const isOverCard = findValueOfItems(over.id, 'card') !== undefined;
+    // DEEP COPY - Snapshot state BEFORE any mutations
+    const previousContainers = containers.map(col => ({
+      ...col,
+      cards: col.cards.map(card => ({ ...card }))
+    }));
+
     const isActiveCard = findValueOfItems(active.id, 'card') !== undefined;
 
-    if(!isActiveCard && activeContainer.id !== overContainer.id){
-      setContainers(prevContainers => (
-        arrayMove(prevContainers,
-          prevContainers.findIndex(c => c.id === activeContainer.id),
-          prevContainers.findIndex(c => c.id === overContainer.id)
-        )
-      ));
+    // ==================== SCENARIO 1: Dragging a COLUMN ====================
+    if (!isActiveCard && activeContainer.id !== overContainer.id) {
+      const newContainers = arrayMove(
+        containers,
+        containers.findIndex(c => c.id === activeContainer.id),
+        containers.findIndex(c => c.id === overContainer.id)
+      );
+      
+      // Optimistic update - UI updates immediately
+      setContainers(newContainers);
+      
+      // Persist to backend
+      try {
+        const columnPositions = newContainers.map((col, index) => ({
+          id: col.id,
+          position: index
+        }));
+        await reorderColumns(columnPositions);
+        // Success - UI already updated, nothing more to do
+      } catch (error) {
+        console.error('Failed to reorder columns:', error);
+        // Rollback to previous state
+        setContainers(previousContainers);
+        alert('Failed to reorder columns. Please try again.');
+      }
+      
       setActiveId(null);
       return;
     }
 
+    // ==================== SCENARIO 2 & 3: Dragging a CARD ====================
+    const activeItemIndex = activeContainer.cards.findIndex(i => i.id === active.id);
+    const isOverCard = findValueOfItems(over.id, 'card') !== undefined;
     const overItemIndex = isOverCard
       ? overContainer.cards.findIndex(i => i.id === over.id)
       : overContainer.cards.length;
     
-    // Only update if item isn't already in correct position
-    if (activeItemIndex !== overItemIndex) {
-      const activeContainerIndex = containers.findIndex(c => c.id === activeContainer.id);
-      const newItems = [...containers];
-      newItems[activeContainerIndex].cards = arrayMove(
-        newItems[activeContainerIndex].cards,
-        activeItemIndex,
-        overItemIndex
-      );
-      setContainers(newItems);
+    // Same position in same column - no change needed
+    if (activeItemIndex === overItemIndex && activeContainer.id === overContainer.id) {
+      setActiveId(null);
+      return;
+    }
+
+    const activeContainerIndex = containers.findIndex(c => c.id === activeContainer.id);
+    const overContainerIndex = containers.findIndex(c => c.id === overContainer.id);
+    
+    // Create new state with moved card
+    const newItems = containers.map(col => ({
+      ...col,
+      cards: [...col.cards]
+    }));
+
+    // Move the card
+    const [movedCard] = newItems[activeContainerIndex].cards.splice(activeItemIndex, 1);
+    newItems[overContainerIndex].cards.splice(overItemIndex, 0, movedCard);
+    
+    // Optimistic update - UI updates immediately
+    setContainers(newItems);
+
+    // Persist to backend
+    try {
+      const affectedColumns = [];
+      
+      // Source column (where card was removed from)
+      affectedColumns.push({
+        columnId: activeContainer.id,
+        cards: newItems[activeContainerIndex].cards.map((card, index) => ({
+          id: card.id,
+          position: index
+        }))
+      });
+      
+      // Target column (where card was added to) - only if different from source
+      if (activeContainer.id !== overContainer.id) {
+        affectedColumns.push({
+          columnId: overContainer.id,
+          cards: newItems[overContainerIndex].cards.map((card, index) => ({
+            id: card.id,
+            position: index
+          }))
+        });
+      }
+      
+      await reorderBoard(affectedColumns);
+      // Success - UI already updated, nothing more to do
+    } catch (error) {
+      console.error('Failed to reorder cards:', error);
+      // Rollback to previous state
+      setContainers(previousContainers);
+      alert('Failed to move card. Please try again.');
     }
 
     setActiveId(null);
