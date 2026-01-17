@@ -1,0 +1,21 @@
+import { Request, Response, NextFunction } from "express";
+import { Prisma } from "@prisma/client";
+
+export const errorHandler = (error: Error, req: Request, res: Response, next: NextFunction) => {
+    console.error('Error:', error);
+
+    if(error instanceof Prisma.PrismaClientKnownRequestError){
+        if(error.code === 'P2025'){
+            return res.status(404).json({error: "Resource not found"});
+        }
+        if(error.code === 'P2002'){
+            return res.status(409).json({error: "Resource already exists"});
+        }
+    }
+
+    if(error.name === 'ZodError'){
+        return res.status(400).json({error: "Validation failed", details: (error as any).errors});
+    }
+
+    res.status(500).json({error: "Internal server error"});
+}

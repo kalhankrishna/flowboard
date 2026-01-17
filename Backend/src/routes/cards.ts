@@ -1,5 +1,6 @@
 import express from 'express';
 import { prisma } from '../lib/prisma.js';
+import { asyncHandler } from '../middlewares/asyncHandler.js';
 
 interface ReorderCardsRequest {
   columns: Array<{
@@ -14,108 +15,78 @@ interface ReorderCardsRequest {
 const router = express.Router();
 
 // POST /api/cards
-router.post("/", async (req, res)=>{
-    try{
-        const {columnId, title, description, position} = req.body;
+router.post("/", asyncHandler(async (req, res)=>{
+    const {columnId, title, description, position} = req.body;
 
-        if(!columnId || !title || position === undefined){
-            return res.status(400).json({error: "Missing required fields: columnId, title, position"});
-        }
-
-        const card = await prisma.card.create({
-            data: {
-                columnId,
-                title,
-                description: description || "",
-                position
-            }
-        });
-
-        res.status(201).json(card);
-    }catch(error){
-        console.error('Error creating card:', error);
-        res.status(500).json({error: "Internal server error"});
+    if(!columnId || !title || position === undefined){
+        return res.status(400).json({error: "Missing required fields: columnId, title, position"});
     }
-});
+
+    const card = await prisma.card.create({
+        data: {
+            columnId,
+            title,
+            description: description || "",
+            position
+        }
+    });
+
+    res.status(201).json(card);
+}));
 
 //PATCH /api/cards/:id
-router.patch("/:id", async (req, res)=>{
-    try{
-        const {id} = req.params;
-        const {title, description, position, columnId} = req.body;
+router.patch("/:id", asyncHandler(async (req, res)=>{
+    const id = req.params.id as string;
+    const {title, description, position, columnId} = req.body;
 
-        const updatedData = Object.fromEntries(
-            Object.entries({title, description, position, columnId})
-            .filter(([_, value]) => value !== undefined)
-        );
-        
-        const updatedCard = await prisma.card.update({
-            where: { id },
-            data: updatedData,
-        });
+    const updatedData = Object.fromEntries(
+        Object.entries({title, description, position, columnId})
+        .filter(([_, value]) => value !== undefined)
+    );
+    
+    const updatedCard = await prisma.card.update({
+        where: { id },
+        data: updatedData,
+    });
 
-        res.json(updatedCard);
-    }catch(error: any){
-        console.error('Error updating card:', error);
-
-        if (error.code === 'P2025') {
-            return res.status(404).json({ error: 'Card not found' });
-        }
-
-        res.status(500).json({error: "Internal server error"});
-    }
-});
+    res.json(updatedCard);
+}));
 
 // DELETE /api/cards/:id
-router.delete("/:id", async (req, res)=>{
-    try{
-        const {id} = req.params;
-        await prisma.card.delete({
-            where: {id}
-        });
+router.delete("/:id", asyncHandler(async (req, res)=>{
+    const id = req.params.id as string;
+    await prisma.card.delete({
+        where: {id}
+    });
 
-        res.status(204).end();
-    }catch(error: any){
-        console.error('Error deleting card:', error);
-
-        if (error.code === 'P2025') {
-            return res.status(404).json({ error: 'Card not found' });
-        }
-
-        res.status(500).json({error: "Internal server error"});
-    }
-});
+    res.status(204).end();
+}));
 
 // POST /api/cards/reorder
-router.post('/reorder', async (req, res) => {
-  try {
+router.post('/reorder', asyncHandler(async (req, res) => {
     const { columns } = req.body as ReorderCardsRequest;
 
     if (!Array.isArray(columns)) {
-      return res.status(400).json({ error: 'columns must be an array' });
+        return res.status(400).json({ error: 'columns must be an array' });
     }
 
     await prisma.$transaction(
-      columns.flatMap(column =>
+        columns.flatMap(column =>
         column.cards.map(card =>
-          prisma.card.update({
+            prisma.card.update({
             where: { 
-              id: card.id,
+                id: card.id,
             },
             data: { 
                 position: card.position,
                 columnId: column.columnId
             }
-          })
+            })
         )
-      )
+        )
     );
 
     res.json({ success: true });
-  } catch (error) {
-    console.error('Board reorder error:', error);
-    res.status(500).json({ error: 'Failed to reorder board' });
-  }
-});
+}));
 
 export default router;
