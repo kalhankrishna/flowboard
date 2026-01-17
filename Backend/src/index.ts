@@ -5,8 +5,10 @@ import boardRoutes from './routes/boards.js';
 import cardRoutes from './routes/cards.js';
 import columnRoutes from './routes/columns.js';
 import { errorHandler } from './middlewares/errorHandler.js';
+import { validateEnv } from './config/env.js';
 
 dotenv.config();
+validateEnv();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
