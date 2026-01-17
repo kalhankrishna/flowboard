@@ -1,6 +1,8 @@
 import express from 'express';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middlewares/asyncHandler.js';
+import { validateSchema } from '../middlewares/validateSchema.js';
+import { createBoardSchema, updateBoardSchema } from '../schemas/board.schema.js';
 
 const router = express.Router();
 
@@ -41,7 +43,7 @@ router.get("/:id", asyncHandler(async(req, res)=>{
 }));
 
 // POST /api/boards
-router.post("/", asyncHandler(async (req, res)=>{
+router.post("/", validateSchema(createBoardSchema), asyncHandler(async (req, res)=>{
   const {name} = req.body;
 
   if(!name){
@@ -56,7 +58,7 @@ router.post("/", asyncHandler(async (req, res)=>{
 }));
 
 //PATCH /api/boards/:id
-router.patch("/:id", asyncHandler(async(req, res)=>{
+router.patch("/:id", validateSchema(updateBoardSchema), asyncHandler(async(req, res)=>{
   const id = req.params.id as string;
   const {name} = req.body;
 

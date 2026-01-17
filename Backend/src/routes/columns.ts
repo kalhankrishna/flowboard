@@ -1,23 +1,14 @@
 import express from 'express';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middlewares/asyncHandler.js';
-
-interface ReorderColumnsRequest {
-  columns: Array<{
-    id: string;
-    position: number;
-  }>;
-}
+import { validateSchema } from '../middlewares/validateSchema.js';
+import { createColumnSchema, updateColumnSchema, reorderColumnsSchema, ReorderColumnsInput } from '../schemas/column.schema.js';
 
 const router = express.Router();
 
 // POST /api/columns
-router.post("/", asyncHandler(async(req, res)=>{
+router.post("/", validateSchema(createColumnSchema), asyncHandler(async(req, res)=>{
     const {boardId, title, position} = req.body;
-
-    if(!boardId || !title || position === undefined){
-        return res.status(400).json({error: "Missing required fields: boardId, title, position"});
-    }
 
     const column = await prisma.column.create({
         data: {
@@ -31,17 +22,13 @@ router.post("/", asyncHandler(async(req, res)=>{
 }));
 
 // PATCH /api/columns/:id
-router.patch("/:id", asyncHandler(async(req, res)=>{
+router.patch("/:id", validateSchema(updateColumnSchema), asyncHandler(async(req, res)=>{
     const id = req.params.id as string;
     const {title, position} = req.body;
-    const updatedData = Object.fromEntries(
-        Object.entries({title, position})
-        .filter(([_, value]) => value !== undefined)
-    );
     
     const updatedColumn = await prisma.column.update({
         where: { id },
-        data: updatedData,
+        data: {title, position},
     });
 
     res.json(updatedColumn);
@@ -59,12 +46,8 @@ router.delete("/:id", asyncHandler(async(req, res)=>{
 }));
 
 // POST /api/columns/reorder
-router.post('/reorder', asyncHandler(async (req, res) => {
-    const { columns } = req.body as ReorderColumnsRequest;
-
-    if (!Array.isArray(columns)) {
-        return res.status(400).json({ error: 'columns must be an array' });
-    }
+router.post('/reorder', validateSchema(reorderColumnsSchema), asyncHandler(async (req, res) => {
+    const { columns } = req.body as ReorderColumnsInput;
 
     await prisma.$transaction(
         columns.map(column =>

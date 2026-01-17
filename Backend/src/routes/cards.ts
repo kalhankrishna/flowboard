@@ -1,26 +1,14 @@
 import express from 'express';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middlewares/asyncHandler.js';
-
-interface ReorderCardsRequest {
-  columns: Array<{
-    columnId: string;
-    cards: Array<{
-      id: string;
-      position: number;
-    }>;
-  }>;
-}
+import { validateSchema } from '../middlewares/validateSchema.js';
+import { createCardSchema, updateCardSchema, reorderCardsSchema, ReorderCardsInput } from '../schemas/card.schema.js';
 
 const router = express.Router();
 
 // POST /api/cards
-router.post("/", asyncHandler(async (req, res)=>{
+router.post("/", validateSchema(createCardSchema), asyncHandler(async (req, res)=>{
     const {columnId, title, description, position} = req.body;
-
-    if(!columnId || !title || position === undefined){
-        return res.status(400).json({error: "Missing required fields: columnId, title, position"});
-    }
 
     const card = await prisma.card.create({
         data: {
@@ -35,18 +23,13 @@ router.post("/", asyncHandler(async (req, res)=>{
 }));
 
 //PATCH /api/cards/:id
-router.patch("/:id", asyncHandler(async (req, res)=>{
+router.patch("/:id", validateSchema(updateCardSchema), asyncHandler(async (req, res)=>{
     const id = req.params.id as string;
     const {title, description, position, columnId} = req.body;
-
-    const updatedData = Object.fromEntries(
-        Object.entries({title, description, position, columnId})
-        .filter(([_, value]) => value !== undefined)
-    );
     
     const updatedCard = await prisma.card.update({
         where: { id },
-        data: updatedData,
+        data: {title, description, position, columnId},
     });
 
     res.json(updatedCard);
@@ -63,12 +46,8 @@ router.delete("/:id", asyncHandler(async (req, res)=>{
 }));
 
 // POST /api/cards/reorder
-router.post('/reorder', asyncHandler(async (req, res) => {
-    const { columns } = req.body as ReorderCardsRequest;
-
-    if (!Array.isArray(columns)) {
-        return res.status(400).json({ error: 'columns must be an array' });
-    }
+router.post('/reorder', validateSchema(reorderCardsSchema), asyncHandler(async (req, res) => {
+    const { columns } = req.body as ReorderCardsInput;
 
     await prisma.$transaction(
         columns.flatMap(column =>

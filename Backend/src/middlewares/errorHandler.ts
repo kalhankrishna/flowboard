@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { Prisma } from "@prisma/client";
+import { ZodError } from "zod";
 
 export const errorHandler = (error: Error, req: Request, res: Response, next: NextFunction) => {
     console.error('Error:', error);
@@ -13,8 +14,14 @@ export const errorHandler = (error: Error, req: Request, res: Response, next: Ne
         }
     }
 
-    if(error.name === 'ZodError'){
-        return res.status(400).json({error: "Validation failed", details: (error as any).errors});
+    if (error instanceof ZodError) {
+        return res.status(400).json({
+            error: 'Validation failed',
+            details: error.issues.map(err => ({
+            field: err.path.join('.'),
+            message: err.message,
+            })),
+        });
     }
 
     res.status(500).json({error: "Internal server error"});
