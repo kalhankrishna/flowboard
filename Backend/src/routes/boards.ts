@@ -1,25 +1,7 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
-
-interface ReorderBoardRequest {
-  columns: Array<{
-    columnId: string;
-    cards: Array<{
-      id: string;
-      position: number;
-    }>;
-  }>;
-}
-
-interface ReorderColumnsRequest {
-  columns: Array<{
-    id: string;
-    position: number;
-  }>;
-}
+import { prisma } from '../lib/prisma.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // GET /api/boards/:id
 router.get("/:id", async(req, res)=>{
@@ -112,63 +94,6 @@ router.delete("/:id", async(req, res)=>{
         }
         res.status(500).json({error: "Internal server error"});
     }
-});
-
-// POST /api/board/reorder
-router.post('/reorder', async (req, res) => {
-  try {
-    const { columns } = req.body as ReorderBoardRequest;
-
-    if (!Array.isArray(columns)) {
-      return res.status(400).json({ error: 'columns must be an array' });
-    }
-
-    await prisma.$transaction(
-      columns.flatMap(column =>
-        column.cards.map(card =>
-          prisma.card.update({
-            where: { 
-              id: card.id,
-            },
-            data: { 
-                position: card.position,
-                columnId: column.columnId
-            }
-          })
-        )
-      )
-    );
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Board reorder error:', error);
-    res.status(500).json({ error: 'Failed to reorder board' });
-  }
-});
-
-// POST /api/board/reorder-columns
-router.post('/reorder-columns', async (req, res) => {
-  try {
-    const { columns } = req.body as ReorderColumnsRequest;
-
-    if (!Array.isArray(columns)) {
-      return res.status(400).json({ error: 'columns must be an array' });
-    }
-
-    await prisma.$transaction(
-      columns.map(column =>  // column is now typed
-        prisma.column.update({
-          where: { id: column.id },
-          data: { position: column.position }
-        })
-      )
-    );
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Reorder columns error:', error);
-    res.status(500).json({ error: 'Failed to reorder columns' });
-  }
 });
 
 export default router;

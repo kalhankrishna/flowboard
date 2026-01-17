@@ -1,8 +1,17 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma.js';
+
+interface ReorderCardsRequest {
+  columns: Array<{
+    columnId: string;
+    cards: Array<{
+      id: string;
+      position: number;
+    }>;
+  }>;
+}
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // POST /api/cards
 router.post("/", async (req, res)=>{
@@ -75,6 +84,38 @@ router.delete("/:id", async (req, res)=>{
 
         res.status(500).json({error: "Internal server error"});
     }
+});
+
+// POST /api/cards/reorder
+router.post('/reorder', async (req, res) => {
+  try {
+    const { columns } = req.body as ReorderCardsRequest;
+
+    if (!Array.isArray(columns)) {
+      return res.status(400).json({ error: 'columns must be an array' });
+    }
+
+    await prisma.$transaction(
+      columns.flatMap(column =>
+        column.cards.map(card =>
+          prisma.card.update({
+            where: { 
+              id: card.id,
+            },
+            data: { 
+                position: card.position,
+                columnId: column.columnId
+            }
+          })
+        )
+      )
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Board reorder error:', error);
+    res.status(500).json({ error: 'Failed to reorder board' });
+  }
 });
 
 export default router;

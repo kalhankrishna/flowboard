@@ -1,8 +1,14 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma.js';
+
+interface ReorderColumnsRequest {
+  columns: Array<{
+    id: string;
+    position: number;
+  }>;
+}
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // POST /api/columns
 router.post("/", async(req, res)=>{
@@ -76,6 +82,31 @@ router.delete("/:id", async(req, res)=>{
 
         res.status(500).json({error: "Internal server error"});
     }
+});
+
+// POST /api/columns/reorder
+router.post('/reorder', async (req, res) => {
+  try {
+    const { columns } = req.body as ReorderColumnsRequest;
+
+    if (!Array.isArray(columns)) {
+      return res.status(400).json({ error: 'columns must be an array' });
+    }
+
+    await prisma.$transaction(
+      columns.map(column =>
+        prisma.column.update({
+          where: { id: column.id },
+          data: { position: column.position }
+        })
+      )
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Reorder columns error:', error);
+    res.status(500).json({ error: 'Failed to reorder columns' });
+  }
 });
 
 export default router;

@@ -9,7 +9,7 @@ import CardContent from "./components/CardContent";
 import ColumnContent from "./components/ColumnContent";
 import CardModal from "./components/CardModal";
 import ColumnModal from "./components/ColumnModal";
-import { getBoard, reorderBoard, reorderColumns } from "@/lib/api";
+import { getBoard, reorderCards, reorderColumns } from "@/lib/api";
 import { Board, Column } from "@/types/board";
 import { Card } from "@/types/board";
 
@@ -286,7 +286,7 @@ export default function Home() {
         });
       }
       
-      await reorderBoard(affectedColumns);
+      await reorderCards(affectedColumns);
       // Success - UI already updated, nothing more to do
     } catch (error) {
       console.error('Failed to reorder cards:', error);

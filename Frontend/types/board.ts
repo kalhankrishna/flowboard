@@ -26,7 +26,7 @@ export interface Board {
   columns: Column[];
 }
 
-export interface ReorderColumn {
+export interface ReorderCards {
   columnId: string;
   cards: Array<{
     id: string;
@@ -34,7 +34,7 @@ export interface ReorderColumn {
   }>;
 }
 
-export interface ColumnPosition {
+export interface ReorderColumns {
   id: string;
   position: number;
 }

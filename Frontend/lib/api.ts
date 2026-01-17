@@ -1,4 +1,4 @@
-import { Board, Column, Card, ReorderColumn, ColumnPosition } from '@/types/board';
+import { Board, Column, Card, ReorderColumns, ReorderCards } from '@/types/board';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -11,34 +11,6 @@ export async function getBoard(boardId: string): Promise<Board> {
     throw new Error(`Failed to fetch board: ${response.statusText}`);
   }
   
-  return response.json();
-}
-
-export async function reorderBoard(columns: ReorderColumn[]): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/boards/reorder`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ columns })
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to reorder board: ${response.statusText}`);
-  }
-
-  return response.json();
-}
-
-export async function reorderColumns(columns: ColumnPosition[]): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/boards/reorder-columns`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ columns })
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to reorder columns: ${response.statusText}`);
-  }
-
   return response.json();
 }
 
@@ -85,6 +57,20 @@ export async function deleteColumn(id: string): Promise<void> {
   return;
 }
 
+export async function reorderColumns(columns: ReorderColumns[]): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/columns/reorder`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ columns })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to reorder columns: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
 //Card API calls
 export async function addCard(columnId: string, title: string, description: string | null, position: number): Promise<Card> {
   const response = await fetch(`${API_BASE_URL}/api/cards`, {
@@ -126,4 +112,18 @@ export async function deleteCard(id: string): Promise<void> {
   }
 
   return;
+}
+
+export async function reorderCards(columns: ReorderCards[]): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/cards/reorder`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ columns })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to reorder cards: ${response.statusText}`);
+  }
+
+  return response.json();
 }
