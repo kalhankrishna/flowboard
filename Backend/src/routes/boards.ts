@@ -3,6 +3,26 @@ import { prisma } from '../lib/prisma.js';
 
 const router = express.Router();
 
+// GET /api/boards
+router.get("/", async (req, res)=>{
+  try{
+    const boards = await prisma.board.findMany({
+      orderBy: {updatedAt: "desc"},
+      include: {
+        _count: {
+          select: { columns: true }
+        }
+      }
+    });
+    res.json(boards);
+  }
+  catch(error){
+    console.error('Error fetching boards:', error);
+    res.status(500).json({error: "Internal server error"});
+  }
+});
+
+
 // GET /api/boards/:id
 router.get("/:id", async(req, res)=>{
     try {
