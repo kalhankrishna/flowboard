@@ -12,6 +12,7 @@ import ColumnModal from "@/components/ColumnModal";
 import { getBoard, reorderCards, reorderColumns } from "@/lib/api";
 import { Board, Column } from "@/types/board";
 import { Card } from "@/types/board";
+import DevPanel from "@/components/DevPanel";
 
 export default function Home() {
   const [board, setBoard] = useState<Board>({} as Board);
