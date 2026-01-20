@@ -4,7 +4,6 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from '@dnd-kit/utilities';
 import ColumnContent from "./ColumnContent";
 import { Column } from '@/types/board';
-import { deleteColumn } from '@/lib/api';
 
 export default function DroppableColumn({
   column,
@@ -38,11 +37,7 @@ export default function DroppableColumn({
   };
 
   const handleDeleteClick = () => {
-    if (window.confirm('Are you sure you want to delete this column?')) {
-      deleteColumn(column.id).then(() => {
-        onDelete(column.id);
-      });
-    }
+    onDelete(column.id);
   };
 
   return (

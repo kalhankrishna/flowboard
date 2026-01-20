@@ -2,23 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import { Board, Column } from '@/types/board';
-import { addColumn, updateColumn } from '@/lib/api';
 
 export default function ColumnModal({
   mode,
   board,
   columnId,
   existingColumn,
-  addColumnToState,
-  editColumn,
+  onAddColumn,
+  onEditColumn,
   closeColumnModal
 }: {
   mode: 'add' | 'edit';
   board: Board;
   columnId: string | null;
   existingColumn?: Column;
-  addColumnToState: (column: Column) => void;
-  editColumn: (columnId: string, updatedColumn: { title: string }) => void;
+  onAddColumn: (title: string, position: number) => void;
+  onEditColumn: (columnId: string, title: string, position: number) => void;
   closeColumnModal: () => void;
 }) {
   const [title, setTitle] = useState(existingColumn?.title || '');
@@ -37,25 +36,17 @@ export default function ColumnModal({
     if (!title.trim()) return;
     
     if (mode === 'add') {
-      addColumn(
-        board.id,
+      onAddColumn(
         title.trim(),
-        board.columns.length || 0
-      ).then(column => addColumnToState(column));
-    } else if (mode === 'edit' && columnId) {
-      updateColumn(
+        board.columns.length
+      );
+    } else if (mode === 'edit' && columnId && existingColumn) {
+      onEditColumn(
         columnId,
         title.trim(),
-        existingColumn ? existingColumn.position : 0
-      ).then(updatedColumn => 
-        editColumn(columnId, {
-          title: updatedColumn.title
-        })
+        existingColumn.position
       );
     }
-    
-    setTitle('');
-    closeColumnModal();
   };
 
   return (

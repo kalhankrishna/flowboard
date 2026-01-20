@@ -4,7 +4,6 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import CardContent from './CardContent';
 import { Card } from '@/types/board';
-import { deleteCard } from '@/lib/api';
 
 export default function SortableCard({
   card,
@@ -30,11 +29,7 @@ export default function SortableCard({
   };
 
   const handleDeleteClick = () => {
-    if (window.confirm('Are you sure you want to delete this card?')) {
-      deleteCard(card.id).then(() => {
-        onDelete(card.id);
-      });
-    }
+    onDelete(card.id);
   };
 
   return(

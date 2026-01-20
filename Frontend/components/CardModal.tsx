@@ -1,25 +1,23 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Card } from '@/types/board';
-import { Column } from '@/types/board';
-import { addCard, updateCard } from '@/lib/api';
+import { Card, Column } from '@/types/board';
 
 export default function CardModal({
   mode,
   column,
   cardId,
   existingCard,
-  addCardToColumn,
-  editCard,
+  onAddCard,
+  onEditCard,
   closeCardModal
 }: {
   mode: 'add' | 'edit';
   column: Column;
   cardId: string | null;
   existingCard?: Card;
-  addCardToColumn: (columnId: string, card: Card) => void;
-  editCard: (cardId: string, updatedCard: { title: string; description: string }) => void;
+  onAddCard: (columnId: string, title: string, description: string | null, position: number) => void;
+  onEditCard: (cardId: string, title: string, description: string | null, position: number) => void;
   closeCardModal: () => void;
 }) {
   const [title, setTitle] = useState(existingCard?.title || '');
@@ -41,29 +39,20 @@ export default function CardModal({
     if (!title.trim()) return;
     
     if (mode === 'add') {
-      addCard(
+      onAddCard(
         column.id,
         title.trim(),
         description.trim() || null,
-        column.cards.length || 0
-      ).then(card => addCardToColumn(column.id, card));
-    } else if (mode === 'edit' && cardId) {
-      updateCard(
+        column.cards.length
+      );
+    } else if (mode === 'edit' && cardId && existingCard) {
+      onEditCard(
         cardId,
         title.trim(),
         description.trim() || null,
-        existingCard ? existingCard.position : 0
-      ).then(updatedCard => 
-        editCard(cardId, {
-          title: updatedCard.title,
-          description: updatedCard.description || ''
-        })
+        existingCard.position
       );
     }
-    
-    setTitle('');
-    setDescription('');
-    closeCardModal();
   };
 
   return (
