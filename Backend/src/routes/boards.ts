@@ -9,7 +9,7 @@ const router = express.Router();
 // GET /api/boards
 router.get("/", asyncHandler(async (req, res)=>{
   const boards = await prisma.board.findMany({
-    orderBy: {updatedAt: "desc"},
+    orderBy: {createdAt: "asc"},
     include: {
       _count: {
         select: { columns: true }

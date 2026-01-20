@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { addCard, updateCard, deleteCard, reorderCards } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
@@ -116,11 +116,25 @@ export function useCards(boardId: string) {
     }, 300);
   }, [boardId, queryClient, reorderCardsMutation]);
   
+  useEffect(() => {
+    return () => {
+      if (reorderTimeout.current) {
+        clearTimeout(reorderTimeout.current);
+      }
+    };
+  }, []);
+
   return {
     addCardMutation,
     updateCardMutation,
     deleteCardMutation,
     handleReorderCards,
     isReordering: reorderCardsMutation.isPending,
+    clearPendingReorder: () => {
+      if (reorderTimeout.current) {
+        clearTimeout(reorderTimeout.current);
+        reorderTimeout.current = null;
+      }
+    }
   };
 }

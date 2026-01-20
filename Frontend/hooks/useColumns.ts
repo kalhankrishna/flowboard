@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { addColumn, updateColumn, deleteColumn, reorderColumns } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
@@ -106,6 +106,14 @@ export function useColumns(boardId: string) {
       reorderColumnsMutation.mutate(columnPositions);
     }, 300);
   }, [boardId, queryClient, reorderColumnsMutation]);
+
+  useEffect(() => {
+    return () => {
+      if (reorderTimeout.current) {
+        clearTimeout(reorderTimeout.current);
+      }
+    };
+  }, []);
   
   return {
     addColumnMutation,
@@ -113,5 +121,11 @@ export function useColumns(boardId: string) {
     deleteColumnMutation,
     handleReorderColumns,
     isReordering: reorderColumnsMutation.isPending,
+    clearPendingReorder: () => {
+      if (reorderTimeout.current) {
+        clearTimeout(reorderTimeout.current);
+        reorderTimeout.current = null;
+      }
+    }
   };
 }

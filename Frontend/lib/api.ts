@@ -14,6 +14,56 @@ export async function getBoard(boardId: string): Promise<Board> {
   return response.json();
 }
 
+export async function getBoards(): Promise<Board[]> {
+  const response = await fetch(`${API_BASE_URL}/api/boards`);
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch boards: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function addBoard(name: string): Promise<Board> {
+  const response = await fetch(`${API_BASE_URL}/api/boards`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to create board: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function updateBoard(id: string, name: string): Promise<Board> {
+  const response = await fetch(`${API_BASE_URL}/api/boards/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update board: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function deleteBoard(id: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/boards/${id}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to delete board: ${response.statusText}`);
+  }
+
+  return;
+}
+
 //Column API calls
 export async function addColumn(boardId: string, title: string, position: number): Promise<Column> {
   const response = await fetch(`${API_BASE_URL}/api/columns`, {

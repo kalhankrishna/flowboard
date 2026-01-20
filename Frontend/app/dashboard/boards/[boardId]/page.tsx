@@ -9,8 +9,6 @@ import CardContent from "@/components/CardContent";
 import ColumnContent from "@/components/ColumnContent";
 import CardModal from "@/components/CardModal";
 import ColumnModal from "@/components/ColumnModal";
-import { addCard, getBoard, reorderCards, reorderColumns } from "@/lib/api";
-import { Board, Column, Card } from "@/types/board";
 import { useBoard, useCards, useColumns } from "@/hooks";
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
@@ -21,9 +19,10 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
   const id = useId();
   const queryClient = useQueryClient();
 
-  const { data: board, isLoading, error } = useBoard(boardId);
-  const {addCardMutation, updateCardMutation, deleteCardMutation, handleReorderCards} = useCards(boardId);
-  const { addColumnMutation, updateColumnMutation, deleteColumnMutation, handleReorderColumns } = useColumns(boardId);
+  const {getBoardQuery} = useBoard(boardId);
+  const {data: board, isLoading, error} = getBoardQuery;
+  const {addCardMutation, updateCardMutation, deleteCardMutation, handleReorderCards, clearPendingReorder: clearCardReorder} = useCards(boardId);
+  const { addColumnMutation, updateColumnMutation, deleteColumnMutation, handleReorderColumns, clearPendingReorder: clearColumnReorder } = useColumns(boardId);
 
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
 
@@ -296,6 +295,8 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
 
   const handleDragCancel = () => {
     setActiveId(null);
+    clearCardReorder();
+    clearColumnReorder();
     queryClient.invalidateQueries({queryKey: queryKeys.board(boardId), refetchType: 'active', exact: true});
   };
 
