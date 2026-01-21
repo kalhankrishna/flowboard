@@ -1,21 +1,31 @@
 import { PrismaClient } from '@prisma/client';
+import { hashPassword } from '../src/lib/auth.js';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('Starting database seed...');
 
-  // Clear existing data
-  console.log('Clearing existing data...');
-  await prisma.card.deleteMany();
-  await prisma.column.deleteMany();
-  await prisma.board.deleteMany();
+  // NOTE: No need to clear data - migrate reset already did this
+  
+  // Create test user
+  console.log('Creating test user...');
+  const testUser = await prisma.user.create({
+    data: {
+      email: 'test@example.com',
+      password: await hashPassword('testpassword123'),
+      name: 'Test User',
+    },
+  });
 
-  // Create board
+  console.log(`Created test user: ${testUser.email}`);
+
+  // Create board (linked to test user)
   console.log('Creating board...');
   const board = await prisma.board.create({
     data: {
       name: 'My Kanban Board',
+      ownerId: testUser.id,
     },
   });
 
@@ -109,7 +119,10 @@ async function main() {
   });
 
   console.log('Database seeded successfully!');
-  console.log(`Created: 1 board, 3 columns, 7 cards`);
+  console.log(`Created: 1 user, 1 board, 3 columns, 7 cards`);
+  console.log('\nTest credentials:');
+  console.log('  Email: test@example.com');
+  console.log('  Password: testpassword123');
 }
 
 main()
