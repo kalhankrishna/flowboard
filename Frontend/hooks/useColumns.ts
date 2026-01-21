@@ -3,10 +3,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { addColumn, updateColumn, deleteColumn, reorderColumns } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
 import { Column, ReorderColumns } from '@/types/board';
+import toast from 'react-hot-toast';
 
 export function useColumns(boardId: string) {
   const queryClient = useQueryClient();
   const reorderTimeout = useRef<NodeJS.Timeout | null>(null);
+  const pendingReorder = useRef<ReorderColumns[] | null>(null);
   
   //ADD COLUMN
   const addColumnMutation = useMutation({
@@ -22,10 +24,12 @@ export function useColumns(boardId: string) {
           columns: [...old.columns, { ...newColumn, cards: [] }]
         };
       });
+      toast.success('Column added successfully');
     },
     
     onError: (error) => {
       console.error('Failed to add column:', error);
+      toast.error('Failed to add column');
       queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
     }
   });
@@ -48,10 +52,12 @@ export function useColumns(boardId: string) {
           )
         };
       });
+      toast.success('Column updated successfully');
     },
     
     onError: (error) => {
       console.error('Failed to update column:', error);
+      toast.error('Failed to update column');
       queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
     }
   });
@@ -76,9 +82,14 @@ export function useColumns(boardId: string) {
       
       return { previous };
     },
+
+    onSuccess: () => {
+      toast.success('Column deleted successfully');
+    },
     
     onError: (error, variables, context) => {
       console.error('Failed to delete column:', error);
+      toast.error('Failed to delete column');
       if (context?.previous) {
         queryClient.setQueryData(queryKeys.board(boardId), context.previous);
       }
@@ -101,9 +112,12 @@ export function useColumns(boardId: string) {
     if (reorderTimeout.current) {
       clearTimeout(reorderTimeout.current);
     }
+
+    pendingReorder.current = columnPositions;
     
     reorderTimeout.current = setTimeout(() => {
       reorderColumnsMutation.mutate(columnPositions);
+      pendingReorder.current = null;
     }, 300);
   }, [boardId, queryClient, reorderColumnsMutation]);
 
@@ -111,6 +125,9 @@ export function useColumns(boardId: string) {
     return () => {
       if (reorderTimeout.current) {
         clearTimeout(reorderTimeout.current);
+      }
+      if(pendingReorder.current) {
+        reorderColumnsMutation.mutate(pendingReorder.current);
       }
     };
   }, []);

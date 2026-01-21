@@ -8,11 +8,17 @@ import { Card } from '@/types/board';
 export default function SortableCard({
   card,
   onEdit,
-  onDelete
+  onDelete,
+  isAddPending,
+  isEditPending,
+  isDeletePending
 }: {
   card: Card;
   onEdit: (cardId: string) => void;
   onDelete: (cardId: string) => void;
+  isAddPending: boolean;
+  isEditPending: boolean;
+  isDeletePending: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
     id: card.id 
@@ -44,6 +50,7 @@ export default function SortableCard({
 
       <button
         onPointerDown={(e) => e.stopPropagation()}
+        disabled={isAddPending || isEditPending || isDeletePending}
         onClick={handleEditClick}
         className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-blue-500 text-white px-2 py-1 rounded text-sm transition"
       >
@@ -51,6 +58,7 @@ export default function SortableCard({
       </button>
       <button
         onPointerDown={(e) => e.stopPropagation()}
+        disabled={isAddPending || isEditPending || isDeletePending}
         onClick={handleDeleteClick}
         className="absolute top-2 right-14 opacity-0 group-hover:opacity-100 bg-red-500 text-white px-2 py-1 rounded text-sm transition"
       >

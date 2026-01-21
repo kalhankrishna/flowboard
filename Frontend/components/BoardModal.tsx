@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { Board } from '@/types/board';
 import { useBoard } from '@/hooks';
 
@@ -10,12 +10,18 @@ export default function BoardModal({
   existingBoard,
   onAddBoard,
   closeBoardModal,
+  isAddingBoard,
+  onUpdateIsPending,
+  isDeletingBoard
 }: {
   mode: 'add' | 'edit';
   boardId: string | null;
   existingBoard?: Board;
   onAddBoard: (name: string) => void;
   closeBoardModal: () => void;
+  isAddingBoard: boolean;
+  onUpdateIsPending: (isPending: boolean) => void;
+  isDeletingBoard: boolean;
 }) {
   const [boardName, setBoardName] = useState(existingBoard?.name || '');
   const { updateBoardMutation } = useBoard(boardId || '');
@@ -43,6 +49,10 @@ export default function BoardModal({
     closeBoardModal();
   };
 
+  useEffect(() => {
+    onUpdateIsPending(updateBoardMutation.isPending);
+  },[updateBoardMutation.isPending, onUpdateIsPending]);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg max-w-md w-full">
@@ -61,9 +71,10 @@ export default function BoardModal({
           <div className="flex gap-2">
             <button 
               type="submit" 
+              disabled={updateBoardMutation.isPending || isAddingBoard || isDeletingBoard}
               className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
             >
-              {mode === 'add' ? 'Create Board' : 'Save Changes'}
+              {mode === 'add' ? 'Create Board' : updateBoardMutation.isPending ? 'Saving...' : 'Save Changes'}
             </button>
             
             <button

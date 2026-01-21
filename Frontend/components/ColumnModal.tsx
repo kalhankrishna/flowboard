@@ -10,7 +10,10 @@ export default function ColumnModal({
   existingColumn,
   onAddColumn,
   onEditColumn,
-  closeColumnModal
+  closeColumnModal,
+  isAddPending,
+  isEditPending,
+  isDeletePending
 }: {
   mode: 'add' | 'edit';
   board: Board;
@@ -19,6 +22,9 @@ export default function ColumnModal({
   onAddColumn: (title: string, position: number) => void;
   onEditColumn: (columnId: string, title: string, position: number) => void;
   closeColumnModal: () => void;
+  isAddPending: boolean;
+  isEditPending: boolean;
+  isDeletePending: boolean;
 }) {
   const [title, setTitle] = useState(existingColumn?.title || '');
 
@@ -65,8 +71,8 @@ export default function ColumnModal({
           autoFocus
         />
         
-        <button type="submit" className="bg-blue-500 text-white p-2 rounded">
-          {mode === 'add' ? 'Add Column' : 'Save Changes'}
+        <button type="submit" disabled={isAddPending || isEditPending || isDeletePending} className="bg-blue-500 text-white p-2 rounded">
+          {mode === 'add' ? 'Add Column' : isEditPending ? 'Saving...' : 'Save Changes'}
         </button>
         
         <button

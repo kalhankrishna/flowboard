@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import { Board } from '@/types/board';
 import { useBoard } from '@/hooks';
+import { useEffect } from 'react';
 
 type BoardCardProps = Board & {
     _count?: {columns: number};
 }
 
-export default function BoardCard({ board, onEditBoard }: { board: BoardCardProps, onEditBoard: (boardId: string) => void }) {
+export default function BoardCard({ board, onEditBoard, isAddingBoard, onDeleteIsPending, isUpdatingBoard }: { board: BoardCardProps, onEditBoard: (boardId: string) => void, isAddingBoard: boolean, onDeleteIsPending: (isPending: boolean) => void , isUpdatingBoard: boolean}) {
   const {deleteBoardMutation} = useBoard(board.id);
 
   const lastUpdated = new Date(board.updatedAt).toLocaleDateString('en-US', {
@@ -29,6 +30,10 @@ export default function BoardCard({ board, onEditBoard }: { board: BoardCardProp
     }
   }
 
+  useEffect(() => {
+    onDeleteIsPending(deleteBoardMutation.isPending);
+  },[deleteBoardMutation.isPending, onDeleteIsPending]);
+
   return (
     <Link 
       href={`/dashboard/boards/${board.id}`}
@@ -45,6 +50,7 @@ export default function BoardCard({ board, onEditBoard }: { board: BoardCardProp
       <button
         onPointerDown={(e) => e.stopPropagation()}
         onClick={handleEditClick}
+        disabled={deleteBoardMutation.isPending || isAddingBoard || isUpdatingBoard}
         className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-blue-500 text-white px-2 py-1 rounded text-sm transition"
       >
         Edit
@@ -52,6 +58,7 @@ export default function BoardCard({ board, onEditBoard }: { board: BoardCardProp
       <button
         onPointerDown={(e) => e.stopPropagation()}
         onClick={handleDelete}
+        disabled={deleteBoardMutation.isPending || isAddingBoard || isUpdatingBoard}
         className="absolute top-2 right-14 opacity-0 group-hover:opacity-100 bg-red-500 text-white px-2 py-1 rounded text-sm transition"
       >
         Delete

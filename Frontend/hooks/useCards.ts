@@ -3,10 +3,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { addCard, updateCard, deleteCard, reorderCards } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
 import { Card, ReorderCards } from '@/types/board';
+import toast from 'react-hot-toast';
 
 export function useCards(boardId: string) {
   const queryClient = useQueryClient();
   const reorderTimeout = useRef<NodeJS.Timeout | null>(null);
+  const pendingReorder = useRef<ReorderCards[] | null>(null);
   
   //ADD CARD
   const addCardMutation = useMutation({
@@ -26,10 +28,12 @@ export function useCards(boardId: string) {
           )
         };
       });
+      toast.success('Card added successfully');
     },
     
     onError: (error) => {
       console.error('Failed to add card:', error);
+      toast.error('Failed to add card');
       queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
     }
   });
@@ -53,10 +57,12 @@ export function useCards(boardId: string) {
           }))
         };
       });
+      toast.success('Card updated successfully');
     },
     
     onError: (error) => {
       console.error('Failed to update card:', error);
+      toast.error('Failed to update card');
       queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
     }
   });
@@ -84,9 +90,14 @@ export function useCards(boardId: string) {
       
       return { previous };
     },
+
+    onSuccess: () => {
+      toast.success('Card deleted successfully');
+    },
     
     onError: (error, variables, context) => {
       console.error('Failed to delete card:', error);
+      toast.error('Failed to delete card');
       if (context?.previous) {
         queryClient.setQueryData(queryKeys.board(boardId), context.previous);
       }
@@ -110,9 +121,12 @@ export function useCards(boardId: string) {
     if (reorderTimeout.current) {
       clearTimeout(reorderTimeout.current);
     }
+
+    pendingReorder.current = affectedColumns;
     
     reorderTimeout.current = setTimeout(() => {
       reorderCardsMutation.mutate(affectedColumns);
+      pendingReorder.current = null;
     }, 300);
   }, [boardId, queryClient, reorderCardsMutation]);
   
@@ -120,6 +134,9 @@ export function useCards(boardId: string) {
     return () => {
       if (reorderTimeout.current) {
         clearTimeout(reorderTimeout.current);
+      }
+      if(pendingReorder.current) {
+        reorderCardsMutation.mutate(pendingReorder.current);
       }
     };
   }, []);

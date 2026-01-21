@@ -20,6 +20,9 @@ export default function DashboardPage() {
     boardId: null,
   });
 
+  const [updateIsPending, setUpdateIsPending] = useState(false);
+  const [deleteIsPending, setDeleteIsPending] = useState(false);
+
   //Helpers
   function findBoard(id: string) {
     if (!boards || !id) return undefined;
@@ -70,6 +73,7 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-bold">My Boards</h1>
         <button 
           onClick={() => openAddBoardModal()}
+          disabled={addBoardMutation.isPending || updateIsPending || deleteIsPending}
           className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
         >
           Create Board
@@ -81,6 +85,7 @@ export default function DashboardPage() {
           <p className="text-gray-600 mb-4">You don't have any boards yet.</p>
           <button 
             onClick={() => openAddBoardModal()}
+            disabled={addBoardMutation.isPending || updateIsPending || deleteIsPending}
             className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
           >
             Create Your First Board
@@ -89,7 +94,7 @@ export default function DashboardPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {boards.map((board: any) => (
-            <BoardCard key={board.id} board={board} onEditBoard={openEditBoardModal} />
+            <BoardCard key={board.id} board={board} onEditBoard={openEditBoardModal} isAddingBoard={addBoardMutation.isPending} onDeleteIsPending={setDeleteIsPending} isUpdatingBoard={updateIsPending} />
           ))}
         </div>
       )}
@@ -101,6 +106,9 @@ export default function DashboardPage() {
         existingBoard={boardModal.boardId ? findBoard(boardModal.boardId) : undefined}
         onAddBoard={handleAddBoard}
         closeBoardModal={closeBoardModal}
+        isAddingBoard={addBoardMutation.isPending}
+        onUpdateIsPending={setUpdateIsPending}
+        isDeletingBoard={deleteIsPending}
       />
       )}
     </div>

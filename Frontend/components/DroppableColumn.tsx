@@ -10,12 +10,18 @@ export default function DroppableColumn({
   onAddCard,
   onEdit,
   onDelete,
+  isAddPending,
+  isEditPending,
+  isDeletePending,
   children
 }: {
   column: Column;
   onAddCard: (columnId: string) => void;
   onEdit: (columnId: string) => void;
   onDelete: (columnId: string) => void;
+  isAddPending: boolean;
+  isEditPending: boolean;
+  isDeletePending: boolean;
   children: React.ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
@@ -49,8 +55,8 @@ export default function DroppableColumn({
       </div>
       <button onPointerDown={(e) => e.stopPropagation()} onClick={handleAddCardClick} className="opacity-0 group-hover:opacity-100 mt-4 bg-green-500 text-white p-2 rounded w-full">Add Card</button>
       <div className="flex justify-between gap-12 opacity-0 group-hover:opacity-100 transition">
-        <button onPointerDown={(e) => e.stopPropagation()} onClick={handleEditClick} className="mt-4 bg-blue-500 text-white p-2 rounded w-full">Edit Column</button>
-        <button onPointerDown={(e) => e.stopPropagation()} onClick={handleDeleteClick} className="mt-4 bg-red-500 text-white p-2 rounded w-full">Delete Column</button>
+        <button onPointerDown={(e) => e.stopPropagation()} disabled={isAddPending || isEditPending || isDeletePending} onClick={handleEditClick} className="mt-4 bg-blue-500 text-white p-2 rounded w-full">Edit Column</button>
+        <button onPointerDown={(e) => e.stopPropagation()} disabled={isAddPending || isEditPending || isDeletePending} onClick={handleDeleteClick} className="mt-4 bg-red-500 text-white p-2 rounded w-full">Delete Column</button>
       </div>
     </div>
   );

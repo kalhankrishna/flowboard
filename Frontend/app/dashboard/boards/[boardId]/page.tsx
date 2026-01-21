@@ -12,6 +12,7 @@ import ColumnModal from "@/components/ColumnModal";
 import { useBoard, useCards, useColumns } from "@/hooks";
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
+import LoadingOverlay from "@/components/LoadingOverlay";
 import * as React from 'react'
 
 export default function BoardPage({ params }: { params: Promise<{ boardId: string }> }) {
@@ -21,8 +22,8 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
 
   const {getBoardQuery} = useBoard(boardId);
   const {data: board, isLoading, error} = getBoardQuery;
-  const {addCardMutation, updateCardMutation, deleteCardMutation, handleReorderCards, clearPendingReorder: clearCardReorder} = useCards(boardId);
-  const { addColumnMutation, updateColumnMutation, deleteColumnMutation, handleReorderColumns, clearPendingReorder: clearColumnReorder } = useColumns(boardId);
+  const {addCardMutation, updateCardMutation, deleteCardMutation, handleReorderCards, isReordering: isReorderingCards, clearPendingReorder: clearCardReorder} = useCards(boardId);
+  const { addColumnMutation, updateColumnMutation, deleteColumnMutation, handleReorderColumns, isReordering: isReorderingColumns, clearPendingReorder: clearColumnReorder } = useColumns(boardId);
 
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
 
@@ -47,6 +48,8 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     mode: null,
     columnId: null
   });
+
+  const isReordering = isReorderingCards || isReorderingColumns;
 
   //LOADING/ERROR STATES
   if (isLoading) {
@@ -311,7 +314,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
           <SortableContext items={board.columns.map(column => column.id)} strategy={horizontalListSortingStrategy}>
             {
               board.columns.map(column => (
-                <DroppableColumn key={column.id} column={column} onAddCard={openAddCardModal} onEdit={openEditColumnModal} onDelete={handleDeleteColumn}>
+                <DroppableColumn key={column.id} column={column} onAddCard={openAddCardModal} onEdit={openEditColumnModal} onDelete={handleDeleteColumn} isAddPending={addColumnMutation.isPending} isEditPending={updateColumnMutation.isPending} isDeletePending={deleteColumnMutation.isPending}>
                   <SortableContext items={column.cards.map(card => card.id)} strategy={verticalListSortingStrategy}>
                     {column.cards.map(card => (
                       <SortableCard 
@@ -319,6 +322,9 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
                         card={card} 
                         onEdit={openEditCardModal}
                         onDelete={handleDeleteCard}
+                        isAddPending={addCardMutation.isPending}
+                        isEditPending={updateCardMutation.isPending}
+                        isDeletePending={deleteCardMutation.isPending}
                       />
                     ))}
                   </SortableContext>
@@ -336,6 +342,9 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
             onAddCard={handleAddCard}
             onEditCard={handleEditCard}
             closeCardModal={closeCardModal}
+            isAddPending={addCardMutation.isPending}
+            isEditPending={updateCardMutation.isPending}
+            isDeletePending={deleteCardMutation.isPending}
           />
         )}
         {columnModal.open && (
@@ -347,6 +356,9 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
             onAddColumn={handleAddColumn}
             onEditColumn={handleEditColumn}
             closeColumnModal={closeColumnModal}
+            isAddPending={addColumnMutation.isPending}
+            isEditPending={updateColumnMutation.isPending}
+            isDeletePending={deleteColumnMutation.isPending}
           />
         )}
       </div>
@@ -369,6 +381,8 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
           </div>
         )}
       </DragOverlay>
+
+      {isReordering && <LoadingOverlay message="Saving changes..." />}
     </DndContext>
   );
 }
