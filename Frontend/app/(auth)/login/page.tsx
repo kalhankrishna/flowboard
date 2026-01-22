@@ -1,9 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'react-hot-toast';
+import { login } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const setUser = useAuthStore((state) => state.setUser);
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -19,8 +26,29 @@ export default function LoginPage() {
       return;
     }
 
-    // TODO: Wire up API call in FB-032
-    console.log('Login attempt:', { email, password });
+    setIsLoading(true);
+
+    try {
+      // Call login API
+      const user = await login({ email, password });
+      
+      // Update Zustand store
+      setUser(user);
+      
+      // Show success toast
+      toast.success('Login successful!');
+      
+      // Redirect to dashboard
+      router.push('/dashboard');
+      
+    } catch (err: any) {
+      // Show error
+      const errorMessage = err.message || 'Login failed';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -29,6 +57,7 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold mb-6 text-center">Login to FlowBoard</h1>
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Email Input */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
               Email
@@ -45,6 +74,7 @@ export default function LoginPage() {
             />
           </div>
 
+          {/* Password Input */}
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
               Password
@@ -61,12 +91,14 @@ export default function LoginPage() {
             />
           </div>
 
+          {/* Error Display */}
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-md">
               <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
 
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={isLoading}
@@ -76,6 +108,7 @@ export default function LoginPage() {
           </button>
         </form>
 
+        {/* Register Link */}
         <p className="mt-4 text-center text-sm text-gray-600">
           Don't have an account?{' '}
           <Link href="/register" className="text-blue-500 hover:text-blue-600 font-medium">

@@ -1,9 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'react-hot-toast';
+import { register } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const setUser = useAuthStore((state) => state.setUser);
+  
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,8 +38,29 @@ export default function RegisterPage() {
       return;
     }
 
-    // TODO: Wire up API call in FB-032
-    console.log('Register attempt:', { name, email, password });
+    setIsLoading(true);
+
+    try {
+      // Call register API
+      const user = await register({ name, email, password });
+      
+      // Update Zustand store
+      setUser(user);
+      
+      // Show success toast
+      toast.success('Account created successfully!');
+      
+      // Redirect to dashboard
+      router.push('/dashboard');
+      
+    } catch (err: any) {
+      // Show error
+      const errorMessage = err.message || 'Registration failed';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -41,6 +69,7 @@ export default function RegisterPage() {
         <h1 className="text-2xl font-bold mb-6 text-center">Create Account</h1>
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Name Input */}
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
               Name
@@ -57,6 +86,7 @@ export default function RegisterPage() {
             />
           </div>
 
+          {/* Email Input */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
               Email
@@ -73,6 +103,7 @@ export default function RegisterPage() {
             />
           </div>
 
+          {/* Password Input */}
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
               Password
@@ -90,6 +121,7 @@ export default function RegisterPage() {
             <p className="mt-1 text-xs text-gray-500">Must be at least 12 characters</p>
           </div>
 
+          {/* Confirm Password Input */}
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
               Confirm Password
@@ -106,12 +138,14 @@ export default function RegisterPage() {
             />
           </div>
 
+          {/* Error Display */}
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-md">
               <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
 
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={isLoading}
@@ -121,6 +155,7 @@ export default function RegisterPage() {
           </button>
         </form>
 
+        {/* Login Link */}
         <p className="mt-4 text-center text-sm text-gray-600">
           Already have an account?{' '}
           <Link href="/login" className="text-blue-500 hover:text-blue-600 font-medium">
