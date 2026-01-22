@@ -1,11 +1,75 @@
 import { Board, Column, Card, ReorderColumns, ReorderCards } from '@/types/board';
+import { User, RegisterInput, LoginInput } from '@/types/auth';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+// Global fetch wrapper with 401 handling
+async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const response = await fetch(url, {
+    ...options,
+    credentials: 'include',
+  });
+
+  // Handle 401
+  if (response.status === 401) {
+    if (typeof window !== 'undefined') {
+      const { useAuthStore } = await import('@/store/authStore');
+      useAuthStore.getState().clearUser();
+      
+      // Redirect to login
+      window.location.href = '/login';
+    }
+  }
+
+  return response;
+}
+
+//Auth API calls
+export async function register(data: RegisterInput): Promise<User> {
+  const response = await apiFetch(`${API_BASE_URL}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Registration failed');
+  }
+
+  return response.json();
+}
+
+export async function login(data: LoginInput): Promise<User> {
+  const response = await apiFetch(`${API_BASE_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Login failed');
+  }
+
+  return response.json();
+}
+
+export async function logout(): Promise<void> {
+  const response = await apiFetch(`${API_BASE_URL}/api/auth/logout`, {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    throw new Error('Logout failed');
+  }
+
+  return;
+}
 
 //Board API calls
 export async function getBoard(boardId: string): Promise<Board> {
-  const response = await fetch(`${API_BASE_URL}/api/boards/${boardId}`);
+  const response = await apiFetch(`${API_BASE_URL}/api/boards/${boardId}`);
   
   if (!response.ok) {
     throw new Error(`Failed to fetch board: ${response.statusText}`);
@@ -15,7 +79,7 @@ export async function getBoard(boardId: string): Promise<Board> {
 }
 
 export async function getBoards(): Promise<Board[]> {
-  const response = await fetch(`${API_BASE_URL}/api/boards`);
+  const response = await apiFetch(`${API_BASE_URL}/api/boards`);
   
   if (!response.ok) {
     throw new Error(`Failed to fetch boards: ${response.statusText}`);
@@ -25,7 +89,7 @@ export async function getBoards(): Promise<Board[]> {
 }
 
 export async function addBoard(name: string): Promise<Board> {
-  const response = await fetch(`${API_BASE_URL}/api/boards`, {
+  const response = await apiFetch(`${API_BASE_URL}/api/boards`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name })
@@ -39,7 +103,7 @@ export async function addBoard(name: string): Promise<Board> {
 }
 
 export async function updateBoard(id: string, name: string): Promise<Board> {
-  const response = await fetch(`${API_BASE_URL}/api/boards/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/api/boards/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name })
@@ -53,7 +117,7 @@ export async function updateBoard(id: string, name: string): Promise<Board> {
 }
 
 export async function deleteBoard(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/boards/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/api/boards/${id}`, {
     method: 'DELETE',
   });
 
@@ -66,7 +130,7 @@ export async function deleteBoard(id: string): Promise<void> {
 
 //Column API calls
 export async function addColumn(boardId: string, title: string, position: number): Promise<Column> {
-  const response = await fetch(`${API_BASE_URL}/api/columns`, {
+  const response = await apiFetch(`${API_BASE_URL}/api/columns`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -82,7 +146,7 @@ export async function addColumn(boardId: string, title: string, position: number
 }
 
 export async function updateColumn(id: string, title: string, position: number): Promise<Column> {
-  const response = await fetch(`${API_BASE_URL}/api/columns/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/api/columns/${id}`, {
     method: 'PATCH',
     headers: {'Content-Type': 'application/json' },
     body: JSON.stringify({ title, position })
@@ -96,7 +160,7 @@ export async function updateColumn(id: string, title: string, position: number):
 }
 
 export async function deleteColumn(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/columns/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/api/columns/${id}`, {
     method: 'DELETE',
   });
 
@@ -108,7 +172,7 @@ export async function deleteColumn(id: string): Promise<void> {
 }
 
 export async function reorderColumns(columns: ReorderColumns[]): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/columns/reorder`, {
+  const response = await apiFetch(`${API_BASE_URL}/api/columns/reorder`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ columns })
@@ -123,7 +187,7 @@ export async function reorderColumns(columns: ReorderColumns[]): Promise<void> {
 
 //Card API calls
 export async function addCard(columnId: string, title: string, description: string | null, position: number): Promise<Card> {
-  const response = await fetch(`${API_BASE_URL}/api/cards`, {
+  const response = await apiFetch(`${API_BASE_URL}/api/cards`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -139,7 +203,7 @@ export async function addCard(columnId: string, title: string, description: stri
 }
 
 export async function updateCard(id: string, title: string, description: string | null, position: number): Promise<Card> {
-  const response = await fetch(`${API_BASE_URL}/api/cards/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/api/cards/${id}`, {
     method: 'PATCH',
     headers: {'Content-Type': 'application/json' },
     body: JSON.stringify({ title, description, position })
@@ -153,7 +217,7 @@ export async function updateCard(id: string, title: string, description: string 
 }
 
 export async function deleteCard(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/cards/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/api/cards/${id}`, {
     method: 'DELETE',
   });
 
@@ -165,7 +229,7 @@ export async function deleteCard(id: string): Promise<void> {
 }
 
 export async function reorderCards(columns: ReorderCards[]): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/cards/reorder`, {
+  const response = await apiFetch(`${API_BASE_URL}/api/cards/reorder`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ columns })
