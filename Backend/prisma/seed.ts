@@ -20,14 +20,30 @@ async function main() {
 
   console.log(`Created test user: ${testUser.email}`);
 
-  // Create board (linked to test user)
-  console.log('Creating board...');
-  const board = await prisma.board.create({
-    data: {
-      name: 'My Kanban Board',
-      ownerId: testUser.id,
-    },
+  // Create board with BoardAccess entry (using transaction)
+  console.log('Creating board with owner access...');
+  const board = await prisma.$transaction(async (tx) => {
+    // Create the board
+    const newBoard = await tx.board.create({
+      data: {
+        name: 'My Kanban Board',
+        ownerId: testUser.id,
+      },
+    });
+
+    // Create BoardAccess entry for owner
+    await tx.boardAccess.create({
+      data: {
+        boardId: newBoard.id,
+        userId: testUser.id,
+        role: 'OWNER',
+      },
+    });
+
+    return newBoard;
   });
+
+  console.log(`Created board with OWNER access entry`);
 
   // Create columns
   console.log('Creating columns...');
@@ -119,7 +135,7 @@ async function main() {
   });
 
   console.log('Database seeded successfully!');
-  console.log(`Created: 1 user, 1 board, 3 columns, 7 cards`);
+  console.log(`Created: 1 user, 1 board, 1 board access entry, 3 columns, 7 cards`);
   console.log('\nTest credentials:');
   console.log('  Email: test@example.com');
   console.log('  Password: testpassword123');

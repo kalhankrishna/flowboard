@@ -13,26 +13,49 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum BoardRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  boards    Board[]
+  id          String        @id @default(uuid())
+  email       String        @unique
+  password    String
+  name        String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  boards      Board[]
+  boardAccess BoardAccess[]
 }
 
 model Board {
-  id        String   @id @default(uuid())
-  name      String
-  ownerId   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  columns   Column[]
+  id         String        @id @default(uuid())
+  name       String
+  ownerId    String
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  owner      User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  columns    Column[]
+  sharedWith BoardAccess[]
 
   @@index([ownerId])
+}
+
+model BoardAccess {
+  id        String    @id @default(uuid())
+  boardId   String
+  userId    String
+  role      BoardRole
+  createdAt DateTime  @default(now())
+
+  board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, userId])
+  @@index([boardId])
+  @@index([userId])
 }
 
 model Column {
