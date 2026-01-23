@@ -5,8 +5,6 @@ const prisma = new PrismaClient();
 
 async function main() {
   console.log('Starting database seed...');
-
-  // NOTE: No need to clear data - migrate reset already did this
   
   // Create test user
   console.log('Creating test user...');
