@@ -5,6 +5,7 @@ import { validateSchema } from '../middlewares/validateSchema.js';
 import { createBoardSchema, updateBoardSchema } from '../schemas/board.schema.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
 import { getRoleByBoardId, hasSufficientRole } from '../lib/permission.helper.js';
+import { shareBoardSchema, updateRoleSchema } from '../schemas/share.schema.js';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -141,7 +142,7 @@ router.patch("/:id", validateSchema(updateBoardSchema), asyncHandler(async (req,
 }));
 
 // DELETE /api/boards/:id
-router.delete("/:id", asyncHandler(async (req, res) => {
+router.delete("/:id", validateSchema(shareBoardSchema), asyncHandler(async (req, res) => {
   const id = req.params.id as string;
 
   if(!req.user){
@@ -155,6 +156,176 @@ router.delete("/:id", asyncHandler(async (req, res) => {
 
   await prisma.board.delete({
     where: { id }
+  });
+
+  res.status(204).send();
+}));
+
+//POST /api/boards/:id/share
+router.post("/:id/share", asyncHandler(async(req,res)=>{
+  const boardId = req.params.id as string;
+  const {email, role} = req.body;
+
+  if(!req.user){
+    return res.status(401).json({ error: "Authentication required" });
+  }
+
+  const userRole = await getRoleByBoardId(boardId, req.user.id);
+  if (!userRole || !hasSufficientRole(userRole, "OWNER")) {
+    return res.status(403).json({ error: "Not authorized to share this board" });
+  }
+
+  const userToShare = await prisma.user.findUnique({
+    where: { email }
+  });
+
+  if (!userToShare) {
+    return res.status(404).json({ error: "Collaborator not found" });
+  }
+  if (userToShare.id === req.user.id) {
+    return res.status(400).json({ error: "Cannot share board with yourself" });
+  }
+
+  const result = await prisma.boardAccess.upsert({
+    where: {
+      boardId_userId: {
+        boardId,
+        userId: userToShare.id
+      }
+    },
+
+    update: { role },
+    create: {
+      boardId,
+      userId: userToShare.id,
+      role
+    }
+  });
+
+  const accesswithUser = await prisma.boardAccess.findUnique({
+    where: {id: result.id},
+    include: {
+      user: {
+        select: {id: true, email: true, name: true}
+      }
+    }
+  });
+
+  res.status(201).json(accesswithUser);
+}));
+
+//GET /api/boards/:id/access
+router.get("/:id/access", asyncHandler(async(req,res)=>{
+  const boardId = req.params.id as string;
+
+  if(!req.user){
+    return res.status(401).json({ error: "Authentication required" });
+  }
+
+  const userRole = await getRoleByBoardId(boardId, req.user.id);
+  if (!userRole || !hasSufficientRole(userRole, "VIEWER")) {
+    return res.status(403).json({ error: "Not authorized to view access list for this board" });
+  }
+
+  const collaborators = await prisma.boardAccess.findMany({
+    where: { boardId },
+    include: {
+      user: {
+        select: {id: true, email: true, name: true}
+      }
+    },
+    orderBy: { createdAt: "asc" }
+  });
+
+  res.json(collaborators);
+}));
+
+//PATCH /api/boards/:id/access/:userId
+router.patch("/:id/access/:userId", validateSchema(updateRoleSchema), asyncHandler(async(req,res)=>{
+  const boardId = req.params.id as string;
+  const userIdToUpdate = req.params.userId as string;
+  const {role} = req.body;
+
+  if(!req.user){
+    return res.status(401).json({ error: "Authentication required" });
+  }
+
+  const userRole = await getRoleByBoardId(boardId, req.user.id);
+  if (!userRole || !hasSufficientRole(userRole, "OWNER")) {
+    return res.status(403).json({ error: "Not authorized to update access for this board" });
+  }
+
+  if (userIdToUpdate === req.user.id) {
+    return res.status(400).json({ error: "Cannot change your own role" });
+  }
+
+  const existingAccess = await prisma.boardAccess.findUnique({
+    where: {
+      boardId_userId: { boardId, userId: userIdToUpdate }
+    }
+  });
+
+  if (!existingAccess) {
+    return res.status(404).json({ error: "Collaborator not found" });
+  }
+
+  const result = await prisma.boardAccess.update({
+    where: {
+      boardId_userId: {
+        boardId,
+        userId: userIdToUpdate
+      }
+    },
+    data: { role }
+  });
+
+  const updatedAccessWithUser = await prisma.boardAccess.findUnique({
+    where: {id: result.id},
+    include: {
+      user: {
+        select: {id: true, email: true, name: true}
+      }
+    }
+  });
+
+  res.json(updatedAccessWithUser);
+}));
+
+//DELETE /api/boards/:id/access/:userId
+router.delete("/:id/access/:userId", asyncHandler(async(req,res)=>{
+  const boardId = req.params.id as string;
+  const userIdToDelete = req.params.userId as string;
+
+  if(!req.user){
+    return res.status(401).json({ error: "Authentication required" });
+  }
+
+  const userRole = await getRoleByBoardId(boardId, req.user.id);
+  if (!userRole || !hasSufficientRole(userRole, "OWNER")) {
+    return res.status(403).json({ error: "Not authorized to remove access for this board" });
+  }
+
+  if (userIdToDelete === req.user.id) {
+    return res.status(400).json({ error: "Cannot remove yourself from the board" });
+  }
+
+  const existingAccess = await prisma.boardAccess.findUnique({
+    where: {
+      boardId_userId: { boardId, userId: userIdToDelete }
+    }
+  });
+
+  if (!existingAccess) {
+    return res.status(404).json({ error: "Collaborator not found" });
+  }
+
+  await prisma.boardAccess.delete({
+    where: {
+      boardId_userId: {
+        boardId,
+        userId: userIdToDelete
+      }
+    }
   });
 
   res.status(204).send();
