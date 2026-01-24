@@ -4,32 +4,22 @@ import { asyncHandler } from '../middlewares/asyncHandler.js';
 import { validateSchema } from '../middlewares/validateSchema.js';
 import { createCardSchema, updateCardSchema, reorderCardsSchema, ReorderCardsInput } from '../schemas/card.schema.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
+import { getRoleByCardId, getRoleByColumnId, hasSufficientRole } from '../lib/permission.helper.js';
 
 const router = express.Router();
 router.use(requireAuth);
-
-// Helper --> verify board ownership
-async function verifyBoardOwnership(columnId: string, userId: string) {
-  const column = await prisma.column.findUnique({
-    where: { id: columnId },
-    include: { board: true }
-  });
-
-  if (!column || column.board.ownerId !== userId) {
-    return false;
-  }
-
-  return true;
-}
 
 // POST /api/cards
 router.post("/", validateSchema(createCardSchema), asyncHandler(async (req, res)=>{
     const {columnId, title, description, position} = req.body;
 
-    const hasAccess = await verifyBoardOwnership(columnId, req.user!.id);
+    if(!req.user){
+        return res.status(401).json({ error: "Authentication required" });
+    }
 
-    if (!hasAccess) {
-        return res.status(403).json({ error: "Not authorized" });
+    const userRole = await getRoleByColumnId(columnId, req.user.id);
+    if (!userRole || !hasSufficientRole(userRole, "EDITOR")) {
+        return res.status(403).json({ error: "Not authorized to add cards to this board" });
     }
 
     const card = await prisma.card.create({
@@ -49,13 +39,13 @@ router.patch("/:id", validateSchema(updateCardSchema), asyncHandler(async (req, 
     const id = req.params.id as string;
     const {title, description, position, columnId} = req.body;
 
-    const card = await prisma.card.findUnique({
-        where: { id },
-        include: { column: { include: { board: true } } }
-    });
+    if(!req.user){
+        return res.status(401).json({ error: "Authentication required" });
+    }
 
-    if (!card || card.column.board.ownerId !== req.user!.id) {
-        return res.status(403).json({ error: "Not authorized" });
+    const userRole = await getRoleByCardId(id, req.user.id);
+    if (!userRole || !hasSufficientRole(userRole, "EDITOR")) {
+        return res.status(403).json({ error: "Not authorized to edit cards in this board" });
     }
     
     const updatedCard = await prisma.card.update({
@@ -70,13 +60,13 @@ router.patch("/:id", validateSchema(updateCardSchema), asyncHandler(async (req, 
 router.delete("/:id", asyncHandler(async (req, res)=>{
     const id = req.params.id as string;
 
-    const card = await prisma.card.findUnique({
-        where: { id },
-        include: { column: { include: { board: true } } }
-    });
+    if(!req.user){
+        return res.status(401).json({ error: "Authentication required" });
+    }
 
-    if (!card || card.column.board.ownerId !== req.user!.id) {
-        return res.status(403).json({ error: "Not authorized" });
+    const userRole = await getRoleByCardId(id, req.user.id);
+    if (!userRole || !hasSufficientRole(userRole, "EDITOR")) {
+        return res.status(403).json({ error: "Not authorized to delete cards in this board" });
     }
 
     await prisma.card.delete({
@@ -90,11 +80,13 @@ router.delete("/:id", asyncHandler(async (req, res)=>{
 router.post('/reorder', validateSchema(reorderCardsSchema), asyncHandler(async (req, res) => {
     const { columns } = req.body as ReorderCardsInput;
 
-    for (const col of columns) {
-        const hasAccess = await verifyBoardOwnership(col.columnId, req.user!.id);
-        if (!hasAccess) {
-            return res.status(403).json({ error: "Not authorized" });
-        }
+    if(!req.user){
+        return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const userRole = await getRoleByColumnId(columns[0].columnId, req.user.id);
+    if (!userRole || !hasSufficientRole(userRole, "EDITOR")) {
+        return res.status(403).json({ error: "Not authorized to reorder cards in this board" });
     }
 
     await prisma.$transaction(

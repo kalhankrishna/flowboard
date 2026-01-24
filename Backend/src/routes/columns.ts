@@ -4,27 +4,22 @@ import { asyncHandler } from '../middlewares/asyncHandler.js';
 import { validateSchema } from '../middlewares/validateSchema.js';
 import { createColumnSchema, updateColumnSchema, reorderColumnsSchema, ReorderColumnsInput } from '../schemas/column.schema.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
+import { getRoleByBoardId, getRoleByColumnId, hasSufficientRole } from '../lib/permission.helper.js';
 
 const router = express.Router();
 router.use(requireAuth);
-
-// Helper --> verify board ownership
-async function verifyBoardOwnership(boardId: string, userId: string) {
-  const board = await prisma.board.findFirst({
-    where: { id: boardId, ownerId: userId }
-  });
-
-  return !!board;
-}
 
 // POST /api/columns
 router.post("/", validateSchema(createColumnSchema), asyncHandler(async(req, res)=>{
     const {boardId, title, position} = req.body;
 
-    const hasAccess = await verifyBoardOwnership(boardId, req.user!.id);
-  
-    if (!hasAccess) {
-        return res.status(403).json({ error: "Not authorized" });
+    if(!req.user){
+        return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const userRole = await getRoleByBoardId(boardId, req.user.id);
+    if (!userRole || !hasSufficientRole(userRole, "EDITOR")) {
+        return res.status(403).json({ error: "Not authorized to add columns to this board" });
     }
 
     const column = await prisma.column.create({
@@ -43,13 +38,13 @@ router.patch("/:id", validateSchema(updateColumnSchema), asyncHandler(async(req,
     const id = req.params.id as string;
     const {title, position} = req.body;
 
-    const column = await prisma.column.findUnique({
-        where: { id },
-        include: { board: true }
-    });
+    if(!req.user){
+        return res.status(401).json({ error: "Authentication required" });
+    }
 
-    if (!column || column.board.ownerId !== req.user!.id) {
-        return res.status(403).json({ error: "Not authorized" });
+    const userRole = await getRoleByColumnId(id, req.user.id);
+    if (!userRole || !hasSufficientRole(userRole, "EDITOR")) {
+        return res.status(403).json({ error: "Not authorized to edit columns in this board" });
     }
     
     const updatedColumn = await prisma.column.update({
@@ -64,13 +59,13 @@ router.patch("/:id", validateSchema(updateColumnSchema), asyncHandler(async(req,
 router.delete("/:id", asyncHandler(async(req, res)=>{
     const id = req.params.id as string;
 
-    const column = await prisma.column.findUnique({
-        where: { id },
-        include: { board: true }
-    });
+    if(!req.user){
+        return res.status(401).json({ error: "Authentication required" });
+    }
 
-    if (!column || column.board.ownerId !== req.user!.id) {
-        return res.status(403).json({ error: "Not authorized" });
+    const userRole = await getRoleByColumnId(id, req.user.id);
+    if (!userRole || !hasSufficientRole(userRole, "EDITOR")) {
+        return res.status(403).json({ error: "Not authorized to delete columns from this board" });
     }
     
     await prisma.column.delete({
@@ -88,13 +83,13 @@ router.post('/reorder', validateSchema(reorderColumnsSchema), asyncHandler(async
         return res.json({ success: true });
     }
 
-    const firstColumn = await prisma.column.findUnique({
-        where: { id: columns[0].id },
-        include: { board: true }
-    });
+    if(!req.user){
+        return res.status(401).json({ error: "Authentication required" });
+    }
 
-    if (!firstColumn || firstColumn.board.ownerId !== req.user!.id) {
-        return res.status(403).json({ error: "Not authorized" });
+    const userRole = await getRoleByColumnId(columns[0].id, req.user.id);
+    if (!userRole || !hasSufficientRole(userRole, "EDITOR")) {
+        return res.status(403).json({ error: "Not authorized to reorder columns in this board" });
     }
 
     await prisma.$transaction(
