@@ -1,5 +1,6 @@
-import { Board, Column, Card, ReorderColumns, ReorderCards } from '@/types/board';
+import { Board, Column, Card, ReorderColumns, ReorderCards, CategorizedBoards } from '@/types/board';
 import { User, RegisterInput, LoginInput } from '@/types/auth';
+import { BoardAccess, ShareBoardInput, UpdateRoleInput } from '@/types/share';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -13,11 +14,15 @@ async function apiFetch(url: string, options: RequestInit = {}): Promise<Respons
   // Handle 401
   if (response.status === 401) {
     if (typeof window !== 'undefined') {
-      const { useAuthStore } = await import('@/store/authStore');
-      useAuthStore.getState().clearUser();
-      
-      // Redirect to login
-      window.location.href = '/login';
+      const currentPath = window.location.pathname;
+
+      if(currentPath !== '/login') {
+        const { useAuthStore } = await import('@/store/authStore');
+        useAuthStore.getState().clearUser();
+        
+        // Redirect to login
+        window.location.href = '/login';
+      }
     }
   }
 
@@ -78,7 +83,7 @@ export async function getBoard(boardId: string): Promise<Board> {
   return response.json();
 }
 
-export async function getBoards(): Promise<Board[]> {
+export async function getBoards(): Promise<CategorizedBoards> {
   const response = await apiFetch(`${API_BASE_URL}/api/boards`);
   
   if (!response.ok) {
@@ -240,4 +245,55 @@ export async function reorderCards(columns: ReorderCards[]): Promise<void> {
   }
 
   return response.json();
+}
+
+//Board Sharing API Calls
+export async function getBoardCollaborators(boardId: string) : Promise<BoardAccess[]> {
+  const response = await apiFetch(`${API_BASE_URL}/api/boards/${boardId}/access`);
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch collaborators: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function shareBoard(boardId: string, data: ShareBoardInput): Promise<BoardAccess> {
+  const response = await apiFetch(`${API_BASE_URL}/api/boards/${boardId}/share`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to share board: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function updateCollaboratorRole(boardId: string, userId: string, data: UpdateRoleInput): Promise<BoardAccess> {
+  const response = await apiFetch(`${API_BASE_URL}/api/boards/${boardId}/access/${userId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update collaborator role: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function removeCollaborator(boardId: string, userId: string): Promise<void> {
+  const response = await apiFetch(`${API_BASE_URL}/api/boards/${boardId}/access/${userId}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to remove collaborator: ${response.statusText}`);
+  }
+
+  return;
 }

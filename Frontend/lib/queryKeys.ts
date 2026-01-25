@@ -8,4 +8,7 @@ export const queryKeys = {
   
   // Card queries
   cards: (columnId: string) => ['cards', columnId] as const,
+
+  // Sharing queries
+  collaborators: (boardId: string) => ['collaborators', boardId] as const,
 } as const;

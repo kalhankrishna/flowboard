@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getBoard, getBoards, addBoard, updateBoard, deleteBoard } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
-import { Board } from '@/types/board';
+import { CategorizedBoards } from '@/types/board';
 import toast from 'react-hot-toast';
 
 export function useBoard(boardId: string) {
@@ -21,11 +21,12 @@ export function useBoard(boardId: string) {
 
     onSuccess: (updatedBoard) => {
       queryClient.setQueryData(queryKeys.board(updatedBoard.id), updatedBoard);
-      queryClient.setQueryData(queryKeys.boards(), (old: Board[] | undefined) => {
+      queryClient.setQueryData(queryKeys.boards(), (old: CategorizedBoards | undefined) => {
         if (!old) return old;
-        return old.map(board =>
-          board.id === updatedBoard.id ? updatedBoard : board
-        );
+        return {
+          ownedBoards: old.ownedBoards.map(board=>board.id===updatedBoard.id?updateBoard:board),
+          sharedBoards: old.sharedBoards.map(board=>board.id===updatedBoard.id?updateBoard:board)
+        };
       });
       toast.success('Board updated successfully');
     },
@@ -46,9 +47,12 @@ export function useBoard(boardId: string) {
 
       const previous = queryClient.getQueryData(queryKeys.boards());
 
-      queryClient.setQueryData(queryKeys.boards(), (old: Board[] | undefined) => {
+      queryClient.setQueryData(queryKeys.boards(), (old: CategorizedBoards | undefined) => {
         if (!old) return old;
-        return old.filter(board => board.id !== id);
+        return {
+          ownedBoards: old.ownedBoards.filter(board => board.id !== id),
+          sharedBoards: old.sharedBoards.filter(board => board.id !== id)
+        };
       });
 
       return { previous };
@@ -89,9 +93,12 @@ export function useBoards(){
     mutationFn: (name: string) => addBoard(name),
 
     onSuccess: (newBoard) => {
-      queryClient.setQueryData(queryKeys.boards(), (old: Board[] | undefined) => {
+      queryClient.setQueryData(queryKeys.boards(), (old: CategorizedBoards | undefined) => {
         if (!old) return old;
-        return [...old, newBoard];
+        return {
+          ownedBoards: [...old.ownedBoards, newBoard],
+          sharedBoards: old.sharedBoards
+        };
       });
       toast.success('Board created successfully');
     },

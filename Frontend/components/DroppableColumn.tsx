@@ -6,6 +6,7 @@ import ColumnContent from "./ColumnContent";
 import { Column } from '@/types/board';
 
 export default function DroppableColumn({
+  canEdit,
   column,
   onAddCard,
   onEdit,
@@ -15,6 +16,7 @@ export default function DroppableColumn({
   isDeletePending,
   children
 }: {
+  canEdit: boolean;
   column: Column;
   onAddCard: (columnId: string) => void;
   onEdit: (columnId: string) => void;
@@ -53,11 +55,15 @@ export default function DroppableColumn({
           {children}
         </ColumnContent>
       </div>
-      <button onPointerDown={(e) => e.stopPropagation()} onClick={handleAddCardClick} className="opacity-0 group-hover:opacity-100 mt-4 bg-green-500 text-white p-2 rounded w-full">Add Card</button>
-      <div className="flex justify-between gap-12 opacity-0 group-hover:opacity-100 transition">
-        <button onPointerDown={(e) => e.stopPropagation()} disabled={isAddPending || isEditPending || isDeletePending} onClick={handleEditClick} className="mt-4 bg-blue-500 text-white p-2 rounded w-full">Edit Column</button>
-        <button onPointerDown={(e) => e.stopPropagation()} disabled={isAddPending || isEditPending || isDeletePending} onClick={handleDeleteClick} className="mt-4 bg-red-500 text-white p-2 rounded w-full">Delete Column</button>
-      </div>
+      {canEdit && (
+        <div>
+          <button onPointerDown={(e) => e.stopPropagation()} onClick={handleAddCardClick} className="opacity-0 group-hover:opacity-100 mt-4 bg-green-500 text-white p-2 rounded w-full">Add Card</button>
+          <div className="flex justify-between gap-12 opacity-0 group-hover:opacity-100 transition">
+            <button onPointerDown={(e) => e.stopPropagation()} disabled={isAddPending || isEditPending || isDeletePending} onClick={handleEditClick} className="mt-4 bg-blue-500 text-white p-2 rounded w-full">Edit Column</button>
+            <button onPointerDown={(e) => e.stopPropagation()} disabled={isAddPending || isEditPending || isDeletePending} onClick={handleDeleteClick} className="mt-4 bg-red-500 text-white p-2 rounded w-full">Delete Column</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

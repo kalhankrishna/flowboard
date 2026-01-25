@@ -6,6 +6,7 @@ import CardContent from './CardContent';
 import { Card } from '@/types/board';
 
 export default function SortableCard({
+  canEdit,
   card,
   onEdit,
   onDelete,
@@ -13,6 +14,7 @@ export default function SortableCard({
   isEditPending,
   isDeletePending
 }: {
+  canEdit: boolean;
   card: Card;
   onEdit: (cardId: string) => void;
   onDelete: (cardId: string) => void;
@@ -48,22 +50,26 @@ export default function SortableCard({
     >
       <CardContent card={card} />
 
-      <button
-        onPointerDown={(e) => e.stopPropagation()}
-        disabled={isAddPending || isEditPending || isDeletePending}
-        onClick={handleEditClick}
-        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-blue-500 text-white px-2 py-1 rounded text-sm transition"
-      >
-        Edit
-      </button>
-      <button
-        onPointerDown={(e) => e.stopPropagation()}
-        disabled={isAddPending || isEditPending || isDeletePending}
-        onClick={handleDeleteClick}
-        className="absolute top-2 right-14 opacity-0 group-hover:opacity-100 bg-red-500 text-white px-2 py-1 rounded text-sm transition"
-      >
-        Delete
-      </button>
+      {canEdit && (
+        <div className='absolute top-2 right-2 flex items-center justify-between gap-x-2'>
+          <button
+            onPointerDown={(e) => e.stopPropagation()}
+            disabled={isAddPending || isEditPending || isDeletePending}
+            onClick={handleEditClick}
+            className="opacity-0 group-hover:opacity-100 bg-blue-500 text-white px-2 py-1 rounded text-sm transition"
+          >
+            Edit
+          </button>
+          <button
+            onPointerDown={(e) => e.stopPropagation()}
+            disabled={isAddPending || isEditPending || isDeletePending}
+            onClick={handleDeleteClick}
+            className="opacity-0 group-hover:opacity-100 bg-red-500 text-white px-2 py-1 rounded text-sm transition"
+          >
+            Delete
+          </button>
+        </div>
+      )}
     </div>
   );
 }

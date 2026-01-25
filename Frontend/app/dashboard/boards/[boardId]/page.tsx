@@ -9,12 +9,17 @@ import CardContent from "@/components/CardContent";
 import ColumnContent from "@/components/ColumnContent";
 import CardModal from "@/components/CardModal";
 import ColumnModal from "@/components/ColumnModal";
-import { useBoard, useCards, useColumns } from "@/hooks";
+import { useBoard, useCards, useColumns, useSharing } from "@/hooks";
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import LoadingOverlay from "@/components/LoadingOverlay";
 import * as React from 'react'
 import { Column } from "@/types/board";
+import ShareModal from '@/components/ShareModal';
+import { useAuthStore } from '@/store/authStore';
+import { BoardRole } from '@/types/share';
+import { PointerSensor, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 
 export default function BoardPage({ params }: { params: Promise<{ boardId: string }> }) {
   const { boardId } = React.use(params);
@@ -54,6 +59,34 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     container: Column;
     itemIndex: number;
   } | null>(null);
+
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+
+  const user = useAuthStore((state) => state.user);
+
+  const { getCollaboratorsQuery } = useSharing(boardId);
+  const { data: collaborators } = getCollaboratorsQuery;
+
+  const getUserRole = (): BoardRole | null => {
+    if (!user || !collaborators) return null;
+    const access = collaborators.find(c => c.userId === user.id);
+    return access?.role || null;
+  };
+
+  const userRole = getUserRole();
+
+  const isOwner = userRole === 'OWNER';
+  const canEdit = userRole === 'OWNER' || userRole === 'EDITOR';
+  const canView = userRole !== null;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: canEdit ? 5 : 999999 }
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const isReordering = isReorderingCards || isReorderingColumns;
 
@@ -360,21 +393,34 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
   };
 
   return (
-    <DndContext id={id} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel} collisionDetection={closestCorners}>
+    <DndContext id={id} sensors={sensors} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel} collisionDetection={closestCorners}>
       <div className="p-8">
         <h1 className="text-2xl font-bold mb-2">Kanban Board</h1>
         <div className="flex justify-end">
-          <button onClick={openAddColumnModal} className="mb-4 bg-green-500 text-white p-2 rounded w-full max-w-40">Add Column</button>
+          {isOwner && (
+            <button
+              onClick={() => setShareModalOpen(true)}
+              className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+            >
+              Share
+            </button>
+          )}
+          {
+            canEdit && (
+              <button onClick={openAddColumnModal} disabled={addColumnMutation.isPending} className="mb-4 bg-green-500 text-white p-2 rounded w-full max-w-40">Add Column</button>
+            )
+          }
         </div>
         <div className="flex gap-4 justify-between">
           <SortableContext items={board.columns.map(column => column.id)} strategy={horizontalListSortingStrategy}>
             {
               board.columns.map(column => (
-                <DroppableColumn key={column.id} column={column} onAddCard={openAddCardModal} onEdit={openEditColumnModal} onDelete={handleDeleteColumn} isAddPending={addColumnMutation.isPending} isEditPending={updateColumnMutation.isPending} isDeletePending={deleteColumnMutation.isPending}>
+                <DroppableColumn key={column.id} canEdit={canEdit} column={column} onAddCard={openAddCardModal} onEdit={openEditColumnModal} onDelete={handleDeleteColumn} isAddPending={addColumnMutation.isPending} isEditPending={updateColumnMutation.isPending} isDeletePending={deleteColumnMutation.isPending}>
                   <SortableContext items={column.cards.map(card => card.id)} strategy={verticalListSortingStrategy}>
                     {column.cards.map(card => (
                       <SortableCard 
-                        key={card.id} 
+                        key={card.id}
+                        canEdit={canEdit} 
                         card={card} 
                         onEdit={openEditCardModal}
                         onDelete={handleDeleteCard}
@@ -415,6 +461,12 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
             isAddPending={addColumnMutation.isPending}
             isEditPending={updateColumnMutation.isPending}
             isDeletePending={deleteColumnMutation.isPending}
+          />
+        )}
+        {shareModalOpen && (
+          <ShareModal
+            boardId={boardId}
+            onClose={() => setShareModalOpen(false)}
           />
         )}
       </div>

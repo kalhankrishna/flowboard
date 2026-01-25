@@ -6,11 +6,13 @@ import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
 import { logout as logoutAPI } from '@/lib/api';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function Navbar() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const clearUser = useAuthStore((state) => state.clearUser);
+  const queryClient = useQueryClient();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -26,6 +28,9 @@ export default function Navbar() {
       
       // Show success toast
       toast.success('Logged out successfully');
+
+      // Clear React Query cache
+      queryClient.clear();
       
       // Redirect to login
       router.push('/login');

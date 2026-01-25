@@ -24,6 +24,12 @@ export interface Board {
   createdAt: string;
   updatedAt: string;
   columns: Column[];
+  ownerId: string;
+}
+
+export interface CategorizedBoards {
+  ownedBoards: Board[];
+  sharedBoards: Board[];
 }
 
 export interface ReorderCards {

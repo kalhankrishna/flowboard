@@ -7,9 +7,8 @@ import BoardModal from '@/components/BoardModal';
 
 export default function DashboardPage() {
   const { getBoardsQuery, addBoardMutation } = useBoards();
-  const { data: boards, isLoading, error } = getBoardsQuery;
+  const { data, isLoading, error } = getBoardsQuery;
   
-
   const [boardModal, setBoardModal] = useState<{ 
     open: boolean; 
     mode: 'add' | 'edit' | null;
@@ -25,8 +24,9 @@ export default function DashboardPage() {
 
   //Helpers
   function findBoard(id: string) {
-    if (!boards || !id) return undefined;
-    return boards.find(board => board.id === id);
+    if (!data || !id) return undefined;
+    const allBoards = [...data.ownedBoards, ...data.sharedBoards];
+    return allBoards.find(board => board.id === id);
   }
 
   //Modal Handlers
@@ -67,6 +67,9 @@ export default function DashboardPage() {
     );
   }
 
+  const { ownedBoards, sharedBoards } = data || { ownedBoards: [], sharedBoards: [] };
+  const hasNoBoards = ownedBoards.length === 0 && sharedBoards.length === 0;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -80,7 +83,7 @@ export default function DashboardPage() {
         </button>
       </div>
       
-      {!boards || boards.length === 0 ? (
+      {hasNoBoards ? (
         <div className="text-center py-12">
           <p className="text-gray-600 mb-4">You don't have any boards yet.</p>
           <button 
@@ -92,24 +95,58 @@ export default function DashboardPage() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {boards.map((board: any) => (
-            <BoardCard key={board.id} board={board} onEditBoard={openEditBoardModal} isAddingBoard={addBoardMutation.isPending} onDeleteIsPending={setDeleteIsPending} isUpdatingBoard={updateIsPending} />
-          ))}
-        </div>
+        <>
+          {/* Owned Boards Section */}
+          {ownedBoards.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-4 text-gray-700">My Boards</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {ownedBoards.map((board: any) => (
+                  <BoardCard 
+                    key={board.id} 
+                    board={board} 
+                    onEditBoard={openEditBoardModal} 
+                    isAddingBoard={addBoardMutation.isPending} 
+                    onDeleteIsPending={setDeleteIsPending} 
+                    isUpdatingBoard={updateIsPending} 
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Shared Boards Section */}
+          {sharedBoards.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4 text-gray-700">Shared with Me</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {sharedBoards.map((board: any) => (
+                  <BoardCard 
+                    key={board.id} 
+                    board={board} 
+                    onEditBoard={openEditBoardModal} 
+                    isAddingBoard={addBoardMutation.isPending} 
+                    onDeleteIsPending={setDeleteIsPending} 
+                    isUpdatingBoard={updateIsPending} 
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {boardModal.open && (
-      <BoardModal 
-        mode={boardModal.mode!}
-        boardId={boardModal.boardId}
-        existingBoard={boardModal.boardId ? findBoard(boardModal.boardId) : undefined}
-        onAddBoard={handleAddBoard}
-        closeBoardModal={closeBoardModal}
-        isAddingBoard={addBoardMutation.isPending}
-        onUpdateIsPending={setUpdateIsPending}
-        isDeletingBoard={deleteIsPending}
-      />
+        <BoardModal 
+          mode={boardModal.mode!}
+          boardId={boardModal.boardId}
+          existingBoard={boardModal.boardId ? findBoard(boardModal.boardId) : undefined}
+          onAddBoard={handleAddBoard}
+          closeBoardModal={closeBoardModal}
+          isAddingBoard={addBoardMutation.isPending}
+          onUpdateIsPending={setUpdateIsPending}
+          isDeletingBoard={deleteIsPending}
+        />
       )}
     </div>
   );

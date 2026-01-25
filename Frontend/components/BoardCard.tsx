@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { Board } from '@/types/board';
-import { useBoard } from '@/hooks';
+import { useBoard, useSharing } from '@/hooks';
 import { useEffect } from 'react';
+import { BoardRole } from '@/types/share';
+import { useAuthStore } from '@/store/authStore';
 
 type BoardCardProps = Board & {
     _count?: {columns: number};
@@ -9,6 +11,21 @@ type BoardCardProps = Board & {
 
 export default function BoardCard({ board, onEditBoard, isAddingBoard, onDeleteIsPending, isUpdatingBoard }: { board: BoardCardProps, onEditBoard: (boardId: string) => void, isAddingBoard: boolean, onDeleteIsPending: (isPending: boolean) => void , isUpdatingBoard: boolean}) {
   const {deleteBoardMutation} = useBoard(board.id);
+
+  const user = useAuthStore((state) => state.user);
+  
+  const { getCollaboratorsQuery } = useSharing(board.id);
+  const { data: collaborators } = getCollaboratorsQuery;
+
+  const getUserRole = (): BoardRole | null => {
+    if (!user || !collaborators) return null;
+    const access = collaborators.find(c => c.userId === user.id);
+    return access?.role || null;
+  };
+
+  const userRole = getUserRole();
+
+  const isOwner = userRole === 'OWNER';
 
   const lastUpdated = new Date(board.updatedAt).toLocaleDateString('en-US', {
     month: 'short',
@@ -47,22 +64,28 @@ export default function BoardCard({ board, onEditBoard, isAddingBoard, onDeleteI
         )}
         <p>Updated {lastUpdated}</p>
       </div>
-      <button
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={handleEditClick}
-        disabled={deleteBoardMutation.isPending || isAddingBoard || isUpdatingBoard}
-        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-blue-500 text-white px-2 py-1 rounded text-sm transition"
-      >
-        Edit
-      </button>
-      <button
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={handleDelete}
-        disabled={deleteBoardMutation.isPending || isAddingBoard || isUpdatingBoard}
-        className="absolute top-2 right-14 opacity-0 group-hover:opacity-100 bg-red-500 text-white px-2 py-1 rounded text-sm transition"
-      >
-        Delete
-      </button>
+      {
+        isOwner && (
+          <div className='absolute top-2 right-2 flex justify-between items-center gap-x-2'>
+            <button
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={handleEditClick}
+              disabled={deleteBoardMutation.isPending || isAddingBoard || isUpdatingBoard}
+              className="opacity-0 group-hover:opacity-100 bg-blue-500 text-white px-2 py-1 rounded text-sm transition"
+            >
+              Edit
+            </button>
+            <button
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={handleDelete}
+              disabled={deleteBoardMutation.isPending || isAddingBoard || isUpdatingBoard}
+              className="opacity-0 group-hover:opacity-100 bg-red-500 text-white px-2 py-1 rounded text-sm transition"
+            >
+              Delete
+            </button>
+          </div>
+        )
+      }
     </Link>
   );
 }
