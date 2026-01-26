@@ -44,3 +44,6 @@ next-env.d.ts
 # Workspace lock files (keep only root)
 Frontend/pnpm-lock.yaml
 Backend/pnpm-lock.yaml
+
+# postman
+*postman/
