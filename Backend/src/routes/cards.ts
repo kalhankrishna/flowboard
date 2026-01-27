@@ -2,9 +2,11 @@ import express from 'express';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middlewares/asyncHandler.js';
 import { validateSchema } from '../middlewares/validateSchema.js';
-import { createCardSchema, updateCardSchema, reorderCardsSchema, ReorderCardsInput } from '../schemas/card.schema.js';
+import { createCardSchema, updateCardSchema, reorderCardsSchema, ReorderCardsInput, reorderCardsSchema2 } from '../schemas/card.schema.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
 import { getRoleByCardId, getRoleByColumnId, hasSufficientRole } from '../lib/permission.helper.js';
+import { getNewPos, needsRebalancing, rebalance } from '../lib/position.helper.js';
+import { Prisma } from '@prisma/client';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -77,33 +79,89 @@ router.delete("/:id", asyncHandler(async (req, res)=>{
 }));
 
 // POST /api/cards/reorder
-router.post('/reorder', validateSchema(reorderCardsSchema), asyncHandler(async (req, res) => {
-    const { columns } = req.body as ReorderCardsInput;
+// router.post('/reorder', validateSchema(reorderCardsSchema), asyncHandler(async (req, res) => {
+//     const { columns } = req.body as ReorderCardsInput;
+
+//     if(!req.user){
+//         return res.status(401).json({ error: "Authentication required" });
+//     }
+
+//     const userRole = await getRoleByColumnId(columns[0].columnId, req.user.id);
+//     if (!userRole || !hasSufficientRole(userRole, "EDITOR")) {
+//         return res.status(403).json({ error: "Not authorized to reorder cards in this board" });
+//     }
+
+//     await prisma.$transaction(
+//         columns.flatMap(column =>
+//         column.cards.map(card =>
+//             prisma.card.update({
+//             where: { 
+//                 id: card.id,
+//             },
+//             data: { 
+//                 position: card.position,
+//                 columnId: column.columnId
+//             }
+//             })
+//         )
+//         )
+//     );
+
+//     res.json({ success: true });
+// }));
+
+router.post('/reorder', validateSchema(reorderCardsSchema2), asyncHandler(async (req, res) => {
+    const {cardId, prevCardId, nextCardId, columnId} = req.body;
 
     if(!req.user){
         return res.status(401).json({ error: "Authentication required" });
     }
 
-    const userRole = await getRoleByColumnId(columns[0].columnId, req.user.id);
+    const userRole = await getRoleByColumnId(columnId, req.user.id);
     if (!userRole || !hasSufficientRole(userRole, "EDITOR")) {
         return res.status(403).json({ error: "Not authorized to reorder cards in this board" });
     }
 
-    await prisma.$transaction(
-        columns.flatMap(column =>
-        column.cards.map(card =>
+    const allCardsInColumn = await prisma.card.findMany({
+        where: { columnId },
+        orderBy: { position: 'asc' },
+        select: { id: true, position: true }
+    });
+
+    const cardsToCheck = allCardsInColumn.filter(c => c.id !== cardId);
+
+    if(needsRebalancing(cardsToCheck)){
+        const rebalancedCards = rebalance(cardsToCheck);
+
+        const prevCardPos = prevCardId ? rebalancedCards.find(c => c.id === prevCardId)?.position : undefined;
+        const nextCardPos = nextCardId ? rebalancedCards.find(c => c.id === nextCardId)?.position : undefined;
+        const newPos = getNewPos(prevCardPos, nextCardPos);
+
+        await prisma.$transaction([
+            ...rebalancedCards.map(card =>
+                prisma.card.update({
+                    where: { id: card.id },
+                    data: { position: card.position }
+                })
+            ),
             prisma.card.update({
-            where: { 
-                id: card.id,
-            },
-            data: { 
-                position: card.position,
-                columnId: column.columnId
-            }
+                where: { id: cardId },
+                data: { position: newPos, columnId }
             })
-        )
-        )
-    );
+        ]);
+
+        res.json({ success: true });
+        return;
+    }
+    
+    const prevCardPos = prevCardId ? allCardsInColumn.find(c => c.id === prevCardId)?.position : undefined;
+    const nextCardPos = nextCardId ? allCardsInColumn.find(c => c.id === nextCardId)?.position : undefined;
+    const newPos = getNewPos(prevCardPos, nextCardPos);
+
+    await prisma.card.update({
+        where: { id: cardId },
+        data: { position: newPos, columnId }
+    });
 
     res.json({ success: true });
 }));
