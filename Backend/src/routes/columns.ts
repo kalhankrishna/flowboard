@@ -2,9 +2,10 @@ import express from 'express';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middlewares/asyncHandler.js';
 import { validateSchema } from '../middlewares/validateSchema.js';
-import { createColumnSchema, updateColumnSchema, reorderColumnsSchema, ReorderColumnsInput } from '../schemas/column.schema.js';
+import { createColumnSchema, updateColumnSchema, reorderColumnsSchema } from '../schemas/column.schema.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
 import { getRoleByBoardId, getRoleByColumnId, hasSufficientRole } from '../lib/permission.helper.js';
+import { getNewPos, needsRebalancing, rebalance } from '../lib/position.helper.js';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -77,31 +78,84 @@ router.delete("/:id", asyncHandler(async(req, res)=>{
 
 // POST /api/columns/reorder
 router.post('/reorder', validateSchema(reorderColumnsSchema), asyncHandler(async (req, res) => {
-    const { columns } = req.body as ReorderColumnsInput;
-
-    if (columns.length === 0) {
-        return res.json({ success: true });
-    }
+    const {columnId, prevColumnId, nextColumnId, boardId} = req.body;
 
     if(!req.user){
         return res.status(401).json({ error: "Authentication required" });
     }
 
-    const userRole = await getRoleByColumnId(columns[0].id, req.user.id);
+    const userRole = await getRoleByColumnId(columnId, req.user.id);
     if (!userRole || !hasSufficientRole(userRole, "EDITOR")) {
         return res.status(403).json({ error: "Not authorized to reorder columns in this board" });
     }
 
-    await prisma.$transaction(
-        columns.map(column =>
-        prisma.column.update({
-            where: { id: column.id },
-            data: { position: column.position }
-        })
-        )
-    );
+    const allColumnsInBoard = await prisma.column.findMany({
+        where: { boardId },
+        orderBy: { position: 'asc' }
+    });
+
+    const columnsToCheck = allColumnsInBoard.filter(c => c.id !== columnId);
+
+    if(needsRebalancing(columnsToCheck)){
+        const rebalancedColumns = rebalance(columnsToCheck);
+
+        const prevColumnPos = prevColumnId ? rebalancedColumns.find(c => c.id === prevColumnId)?.position : undefined;
+        const nextColumnPos = nextColumnId ? rebalancedColumns.find(c => c.id === nextColumnId)?.position : undefined;
+        const newPos = getNewPos(prevColumnPos, nextColumnPos);
+
+        const updatedColumns = [...rebalancedColumns, { id: columnId, position: newPos }];
+
+        await prisma.$transaction(
+            updatedColumns.map(column =>
+                prisma.column.update({
+                    where: { id: column.id },
+                    data: { position: column.position }
+                })
+            )
+        );
+
+        res.json({ success: true });
+        return;
+    }
+    
+    const prevColumnPos = prevColumnId ? allColumnsInBoard.find(c => c.id === prevColumnId)?.position : undefined;
+    const nextColumnPos = nextColumnId ? allColumnsInBoard.find(c => c.id === nextColumnId)?.position : undefined;
+    const newPos = getNewPos(prevColumnPos, nextColumnPos);
+
+    await prisma.column.update({
+        where: { id: columnId },
+        data: { position: newPos }
+    });
 
     res.json({ success: true });
 }));
+
+// router.post('/reorder', validateSchema(reorderColumnsSchema), asyncHandler(async (req, res) => {
+//     const { columns } = req.body as ReorderColumnsInput;
+
+//     if (columns.length === 0) {
+//         return res.json({ success: true });
+//     }
+
+//     if(!req.user){
+//         return res.status(401).json({ error: "Authentication required" });
+//     }
+
+//     const userRole = await getRoleByColumnId(columns[0].id, req.user.id);
+//     if (!userRole || !hasSufficientRole(userRole, "EDITOR")) {
+//         return res.status(403).json({ error: "Not authorized to reorder columns in this board" });
+//     }
+
+//     await prisma.$transaction(
+//         columns.map(column =>
+//         prisma.column.update({
+//             where: { id: column.id },
+//             data: { position: column.position }
+//         })
+//         )
+//     );
+
+//     res.json({ success: true });
+// }));
 
 export default router;

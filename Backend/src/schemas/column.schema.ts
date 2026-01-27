@@ -1,25 +1,24 @@
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 
 export const createColumnSchema = z.object({
   boardId: z.uuid('Invalid board ID'),
   title: z.string().min(1, 'Column title is required').max(100, 'Column title too long'),
-  position: z.number().int().nonnegative('Position must be non-negative'),
+  position: z.string().transform(val => new Prisma.Decimal(val)),
 });
 
 export const updateColumnSchema = z.object({
   title: z.string().min(1, 'Column title is required').max(100, 'Column title too long').optional(),
-  position: z.number().int().nonnegative('Position must be non-negative').optional(),
+  position: z.string().transform(val => new Prisma.Decimal(val)).optional(),
 }).refine(data => data.title !== undefined || data.position !== undefined, {
   message: 'At least one field (title or position) must be provided',
 });
 
 export const reorderColumnsSchema = z.object({
-  columns: z.array(
-    z.object({
-      id: z.uuid('Invalid column ID'),
-      position: z.number().int().nonnegative('Position must be non-negative'),
-    })
-  ),
+  columnId: z.uuid('Invalid column ID'),
+  prevColumnId: z.uuid('Invalid prevColumnId').optional(),
+  nextColumnId: z.uuid('Invalid nextColumnId').optional(),
+  boardId: z.uuid('Invalid board ID'),
 });
 
 export type CreateColumnInput = z.infer<typeof createColumnSchema>;

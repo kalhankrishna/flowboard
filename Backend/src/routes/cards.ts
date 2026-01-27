@@ -77,6 +77,7 @@ router.delete("/:id", asyncHandler(async (req, res)=>{
     res.status(204).end();
 }));
 
+//POST api/cards/reorder
 router.post('/reorder', validateSchema(reorderCardsSchema), asyncHandler(async (req, res) => {
     const {cardId, prevCardId, nextCardId, columnId} = req.body;
 
