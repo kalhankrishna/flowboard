@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Card" ALTER COLUMN "position" SET DATA TYPE DECIMAL(20,10);
+
+-- AlterTable
+ALTER TABLE "Column" ALTER COLUMN "position" SET DATA TYPE DECIMAL(20,10);

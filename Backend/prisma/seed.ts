@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { hashPassword } from '../src/lib/auth.js';
 
 const prisma = new PrismaClient();
@@ -49,7 +49,7 @@ async function main() {
     data: {
       boardId: board.id,
       title: 'To Do',
-      position: 0,
+      position: new Prisma.Decimal(1.0),
       version: 1,
     },
   });
@@ -58,7 +58,7 @@ async function main() {
     data: {
       boardId: board.id,
       title: 'In Progress',
-      position: 1,
+      position: new Prisma.Decimal(2.0),
       version: 1,
     },
   });
@@ -67,7 +67,7 @@ async function main() {
     data: {
       boardId: board.id,
       title: 'Done',
-      position: 2,
+      position: new Prisma.Decimal(3.0),
       version: 1,
     },
   });
@@ -82,21 +82,21 @@ async function main() {
         columnId: todoColumn.id,
         title: 'Design homepage',
         description: 'Create mockups and wireframes',
-        position: 0,
+        position: new Prisma.Decimal(1.0),
         version: 1,
       },
       {
         columnId: todoColumn.id,
         title: 'Setup database',
         description: 'Configure PostgreSQL and migrations',
-        position: 1,
+        position: new Prisma.Decimal(2.0),
         version: 1,
       },
       {
         columnId: todoColumn.id,
         title: 'Write API documentation',
         description: 'Document all REST endpoints',
-        position: 2,
+        position: new Prisma.Decimal(3.0),
         version: 1,
       },
     ],
@@ -109,14 +109,14 @@ async function main() {
         columnId: inProgressColumn.id,
         title: 'Build REST API',
         description: 'Implement CRUD endpoints',
-        position: 0,
+        position: new Prisma.Decimal(1.0),
         version: 1,
       },
       {
         columnId: inProgressColumn.id,
         title: 'Add drag & drop',
         description: 'Integrate dnd-kit library',
-        position: 1,
+        position: new Prisma.Decimal(2.0),
         version: 1,
       },
     ],
@@ -129,14 +129,14 @@ async function main() {
         columnId: doneColumn.id,
         title: 'Project setup',
         description: 'Initialize Next.js and Express',
-        position: 0,
+        position: new Prisma.Decimal(1.0),
         version: 1,
       },
       {
         columnId: doneColumn.id,
         title: 'Configure Prisma',
         description: 'Setup ORM and run migrations',
-        position: 1,
+        position: new Prisma.Decimal(2.0),
         version: 1,
       },
     ],
