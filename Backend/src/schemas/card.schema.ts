@@ -19,20 +19,6 @@ export const updateCardSchema = z.object({
 );
 
 export const reorderCardsSchema = z.object({
-  columns: z.array(
-    z.object({
-      columnId: z.uuid('Invalid column ID'),
-      cards: z.array(
-        z.object({
-          id: z.uuid('Invalid card ID'),
-          position: z.string().transform(val => new Prisma.Decimal(val)),
-        })
-      ),
-    })
-  ),
-});
-
-export const reorderCardsSchema2 = z.object({
   cardId: z.uuid('Invalid card ID'),
   prevCardId: z.uuid('Invalid prevCardId').optional(),
   nextCardId: z.uuid('Invalid nextCardId').optional(),
@@ -42,4 +28,3 @@ export const reorderCardsSchema2 = z.object({
 export type CreateCardInput = z.infer<typeof createCardSchema>;
 export type UpdateCardInput = z.infer<typeof updateCardSchema>;
 export type ReorderCardsInput = z.infer<typeof reorderCardsSchema>;
-export type ReorderCardsInput2 = z.infer<typeof reorderCardsSchema2>;

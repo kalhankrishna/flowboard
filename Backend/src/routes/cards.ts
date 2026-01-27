@@ -2,11 +2,10 @@ import express from 'express';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middlewares/asyncHandler.js';
 import { validateSchema } from '../middlewares/validateSchema.js';
-import { createCardSchema, updateCardSchema, reorderCardsSchema, ReorderCardsInput, reorderCardsSchema2 } from '../schemas/card.schema.js';
+import { createCardSchema, updateCardSchema, reorderCardsSchema } from '../schemas/card.schema.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
 import { getRoleByCardId, getRoleByColumnId, hasSufficientRole } from '../lib/permission.helper.js';
 import { getNewPos, needsRebalancing, rebalance } from '../lib/position.helper.js';
-import { Prisma } from '@prisma/client';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -78,39 +77,7 @@ router.delete("/:id", asyncHandler(async (req, res)=>{
     res.status(204).end();
 }));
 
-// POST /api/cards/reorder
-// router.post('/reorder', validateSchema(reorderCardsSchema), asyncHandler(async (req, res) => {
-//     const { columns } = req.body as ReorderCardsInput;
-
-//     if(!req.user){
-//         return res.status(401).json({ error: "Authentication required" });
-//     }
-
-//     const userRole = await getRoleByColumnId(columns[0].columnId, req.user.id);
-//     if (!userRole || !hasSufficientRole(userRole, "EDITOR")) {
-//         return res.status(403).json({ error: "Not authorized to reorder cards in this board" });
-//     }
-
-//     await prisma.$transaction(
-//         columns.flatMap(column =>
-//         column.cards.map(card =>
-//             prisma.card.update({
-//             where: { 
-//                 id: card.id,
-//             },
-//             data: { 
-//                 position: card.position,
-//                 columnId: column.columnId
-//             }
-//             })
-//         )
-//         )
-//     );
-
-//     res.json({ success: true });
-// }));
-
-router.post('/reorder', validateSchema(reorderCardsSchema2), asyncHandler(async (req, res) => {
+router.post('/reorder', validateSchema(reorderCardsSchema), asyncHandler(async (req, res) => {
     const {cardId, prevCardId, nextCardId, columnId} = req.body;
 
     if(!req.user){
