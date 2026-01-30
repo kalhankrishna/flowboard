@@ -4,21 +4,19 @@ import { asyncHandler } from './asyncHandler.js';
 import { prisma } from '../lib/prisma.js';
 
 export const requireAuth = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    // Get token from cookie
-    const token = req.cookies.token;
+    const authHeader = req.headers.authorization;
 
-    if (!token) {
-      return res.status(401).json({ error: 'Authentication required' });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided', code: 'NO_TOKEN' });
     }
 
-    // Verify token
+    const token = authHeader.replace('Bearer ', '');
     const payload = verifyToken(token);
 
     if (!payload) {
-      return res.status(401).json({ error: 'Invalid or expired token' });
+      return res.status(401).json({ error: 'Invalid or expired token', code: 'TOKEN_EXPIRED' });
     }
 
-    // Get user from database
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
       select: {
@@ -29,11 +27,9 @@ export const requireAuth = asyncHandler(async (req: Request, res: Response, next
     });
 
     if (!user) {
-      return res.status(401).json({ error: 'User not found' });
+      return res.status(401).json({ error: 'User not found', code: 'USER_NOT_FOUND' });
     }
 
-    // Attach user to request
     req.user = user;
-
     next();
 });

@@ -30,7 +30,10 @@ export default function LoginPage() {
 
     try {
       // Call login API
-      const user = await login({ email, password });
+      const { accessToken, user } = await login({ email, password });
+
+      // Save access token to localStorage
+      localStorage.setItem('accessToken', accessToken);
       
       // Update Zustand store
       setUser(user);

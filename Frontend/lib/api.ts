@@ -4,23 +4,86 @@ import { BoardAccess, ShareBoardInput, UpdateRoleInput } from '@/types/share';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-// Global fetch wrapper with 401 handling
+let isRefreshing = false;
+let refreshPromise: Promise<string> | null = null;
+
+// Refresh access token
+async function refreshAccessToken(): Promise<string> {
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Refresh failed');
+      }
+
+      const { accessToken } = await response.json();
+      localStorage.setItem('accessToken', accessToken);
+      return accessToken;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+// Global fetch wrapper with auth + refresh
 async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const token = localStorage.getItem('accessToken');
+
   const response = await fetch(url, {
     ...options,
-    credentials: 'include',
+    headers: {
+      ...options.headers,
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
   });
 
-  // Handle 401
+  // Handle 401 with TOKEN_EXPIRED
   if (response.status === 401) {
+    const errorData = await response.json();
+    if (errorData.code === 'TOKEN_EXPIRED') {
+      try {
+        const newToken = await refreshAccessToken();
+
+        return fetch(url, {
+          ...options,
+          headers: {
+            ...options.headers,
+            'Authorization': `Bearer ${newToken}`,
+          },
+        });
+      } catch (refreshError) {
+        localStorage.removeItem('accessToken');
+        
+        if (typeof window !== 'undefined') {
+          const { useAuthStore } = await import('@/store/authStore');
+          useAuthStore.getState().clearUser();
+          window.location.href = '/login';
+        }
+        
+        throw new Error('Session expired');
+      }
+    }
+
+    // Other 401s (NO_TOKEN, INVALID_CREDENTIALS, etc.)
+    localStorage.removeItem('accessToken');
+    
     if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname;
-
-      if(currentPath !== '/login') {
+      if (currentPath !== '/login' && currentPath !== '/register') {
         const { useAuthStore } = await import('@/store/authStore');
         useAuthStore.getState().clearUser();
-        
-        // Redirect to login
         window.location.href = '/login';
       }
     }
@@ -30,11 +93,12 @@ async function apiFetch(url: string, options: RequestInit = {}): Promise<Respons
 }
 
 //Auth API calls
-export async function register(data: RegisterInput): Promise<User> {
-  const response = await apiFetch(`${API_BASE_URL}/api/auth/register`, {
+export async function register(data: RegisterInput): Promise<{ accessToken: string; user: User }> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
+    credentials: 'include',
   });
 
   if (!response.ok) {
@@ -45,11 +109,12 @@ export async function register(data: RegisterInput): Promise<User> {
   return response.json();
 }
 
-export async function login(data: LoginInput): Promise<User> {
-  const response = await apiFetch(`${API_BASE_URL}/api/auth/login`, {
+export async function login(data: LoginInput): Promise<{ accessToken: string; user: User }> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
+    credentials: 'include',
   });
 
   if (!response.ok) {
@@ -61,14 +126,18 @@ export async function login(data: LoginInput): Promise<User> {
 }
 
 export async function logout(): Promise<void> {
-  const response = await apiFetch(`${API_BASE_URL}/api/auth/logout`, {
+  const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
     method: 'POST',
+    credentials: 'include',
   });
 
   if (!response.ok) {
     throw new Error('Logout failed');
   }
 
+  // Clear access token
+  localStorage.removeItem('accessToken');
+  
   return;
 }
 

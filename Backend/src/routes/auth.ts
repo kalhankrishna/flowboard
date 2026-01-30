@@ -2,7 +2,7 @@ import express from 'express';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middlewares/asyncHandler.js';
 import { registerSchema, loginSchema } from '../schemas/auth.schema.js';
-import { hashPassword, comparePassword, generateToken } from '../lib/auth.js';
+import { hashPassword, comparePassword, generateRefreshToken, generateAccessToken, verifyToken } from '../lib/auth.js';
 
 const router = express.Router();
 
@@ -29,9 +29,10 @@ router.post('/register', asyncHandler(async (req, res) => {
       },
     });
 
-    const token = generateToken(user.id);
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
 
-    res.cookie('token', token, {
+    res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
@@ -39,9 +40,12 @@ router.post('/register', asyncHandler(async (req, res) => {
     });
 
     res.status(201).json({
-      id: user.id,
-      email: user.email,
-      name: user.name,
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      }
     });
   })
 );
@@ -56,18 +60,19 @@ router.post('/login', asyncHandler(async (req, res) => {
     });
 
     if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(401).json({ error: 'Invalid email or password', code: 'INVALID_CREDENTIALS' });
     }
 
     const isValidPassword = await comparePassword(password, user.password);
 
     if (!isValidPassword) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(401).json({ error: 'Invalid email or password', code: 'INVALID_CREDENTIALS' });
     }
 
-    const token = generateToken(user.id);
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
 
-    res.cookie('token', token, {
+    res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
@@ -75,16 +80,53 @@ router.post('/login', asyncHandler(async (req, res) => {
     });
 
     res.json({
-      id: user.id,
-      email: user.email,
-      name: user.name,
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      }
     });
   })
 );
 
+// POST /api/auth/refresh
+router.post('/refresh', asyncHandler(async (req, res) => {
+  const { refreshToken } = req.cookies;
+
+  if (!refreshToken) {
+    return res.status(401).json({ error: 'No refresh token', code: 'INVALID_REFRESH_TOKEN' });
+  }
+
+  try {
+    const decoded = verifyToken(refreshToken);
+
+    if (!decoded) {
+      return res.status(401).json({ error: 'Invalid or expired refresh token', code: 'INVALID_REFRESH_TOKEN'});
+    }
+
+    const newAccessToken = generateAccessToken(decoded.userId);
+    const newRefreshToken = generateRefreshToken(decoded.userId);
+
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.json({ accessToken: newAccessToken });
+
+  } catch (error) {
+    console.error("Refresh token error:", error);
+    res.clearCookie('refreshToken');
+    res.status(401).json({ error: 'Invalid or expired refresh token', code: 'INVALID_REFRESH_TOKEN'});
+  }
+}));
+
 // POST /api/auth/logout
 router.post('/logout', (req, res) => {
-  res.clearCookie('token');
+  res.clearCookie('refreshToken');
   res.json({ message: 'Logged out successfully' });
 });
 

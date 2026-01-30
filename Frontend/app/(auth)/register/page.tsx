@@ -42,7 +42,10 @@ export default function RegisterPage() {
 
     try {
       // Call register API
-      const user = await register({ name, email, password });
+      const { accessToken, user } = await register({ name, email, password });
+
+      // Save access token to localStorage
+      localStorage.setItem('accessToken', accessToken);
       
       // Update Zustand store
       setUser(user);
