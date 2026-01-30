@@ -1,15 +1,15 @@
 import express from 'express';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middlewares/asyncHandler.js';
-import { validateSchema } from '../middlewares/validateSchema.js';
 import { registerSchema, loginSchema } from '../schemas/auth.schema.js';
 import { hashPassword, comparePassword, generateToken } from '../lib/auth.js';
 
 const router = express.Router();
 
 // POST /api/auth/register
-router.post('/register', validateSchema(registerSchema), asyncHandler(async (req, res) => {
-    const { email, password, name } = req.body;
+router.post('/register', asyncHandler(async (req, res) => {
+    const reqData = registerSchema.parse(req.body);
+    const { email, password, name } = reqData;
 
     const existingUser = await prisma.user.findUnique({
       where: { email },
@@ -47,8 +47,9 @@ router.post('/register', validateSchema(registerSchema), asyncHandler(async (req
 );
 
 // POST /api/auth/login
-router.post('/login', validateSchema(loginSchema), asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
+router.post('/login', asyncHandler(async (req, res) => {
+    const reqData = loginSchema.parse(req.body);
+    const { email, password } = reqData;
 
     const user = await prisma.user.findUnique({
       where: { email },
