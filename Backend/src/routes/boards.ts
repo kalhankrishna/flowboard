@@ -1,7 +1,6 @@
 import express from 'express';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middlewares/asyncHandler.js';
-import { validateSchema } from '../middlewares/validateSchema.js';
 import { createBoardSchema, updateBoardSchema } from '../schemas/board.schema.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
 import { getRoleByBoardId, hasSufficientRole } from '../lib/permission.helper.js';
@@ -80,8 +79,9 @@ router.get("/:id", asyncHandler(async(req, res)=>{
 }));
 
 // POST /api/boards
-router.post("/", validateSchema(createBoardSchema), asyncHandler(async (req, res) => {
-  const { name } = req.body;
+router.post("/", asyncHandler(async (req, res) => {
+  const reqData = createBoardSchema.parse(req.body);
+  const { name } = reqData;
 
   if(!req.user){
     return res.status(401).json({ error: "Authentication required" });
@@ -116,9 +116,10 @@ router.post("/", validateSchema(createBoardSchema), asyncHandler(async (req, res
 }));
 
 //PATCH /api/boards/:id
-router.patch("/:id", validateSchema(updateBoardSchema), asyncHandler(async (req, res) => {
+router.patch("/:id", asyncHandler(async (req, res) => {
   const id = req.params.id as string;
-  const { name } = req.body;
+  const reqData = updateBoardSchema.parse(req.body);
+  const { name } = reqData;
 
   if(!req.user){
     return res.status(401).json({ error: "Authentication required" });
@@ -142,7 +143,7 @@ router.patch("/:id", validateSchema(updateBoardSchema), asyncHandler(async (req,
 }));
 
 // DELETE /api/boards/:id
-router.delete("/:id", validateSchema(shareBoardSchema), asyncHandler(async (req, res) => {
+router.delete("/:id", asyncHandler(async (req, res) => {
   const id = req.params.id as string;
 
   if(!req.user){
@@ -164,7 +165,8 @@ router.delete("/:id", validateSchema(shareBoardSchema), asyncHandler(async (req,
 //POST /api/boards/:id/share
 router.post("/:id/share", asyncHandler(async(req,res)=>{
   const boardId = req.params.id as string;
-  const {email, role} = req.body;
+  const reqData = shareBoardSchema.parse(req.body);
+  const {email, role} = reqData;
 
   if(!req.user){
     return res.status(401).json({ error: "Authentication required" });
@@ -241,10 +243,11 @@ router.get("/:id/access", asyncHandler(async(req,res)=>{
 }));
 
 //PATCH /api/boards/:id/access/:userId
-router.patch("/:id/access/:userId", validateSchema(updateRoleSchema), asyncHandler(async(req,res)=>{
+router.patch("/:id/access/:userId", asyncHandler(async(req,res)=>{
   const boardId = req.params.id as string;
   const userIdToUpdate = req.params.userId as string;
-  const {role} = req.body;
+  const reqData = updateRoleSchema.parse(req.body);
+  const {role} = reqData;
 
   if(!req.user){
     return res.status(401).json({ error: "Authentication required" });

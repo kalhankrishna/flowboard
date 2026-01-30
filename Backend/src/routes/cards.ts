@@ -1,7 +1,6 @@
 import express from 'express';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middlewares/asyncHandler.js';
-import { validateSchema } from '../middlewares/validateSchema.js';
 import { createCardSchema, updateCardSchema, reorderCardsSchema } from '../schemas/card.schema.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
 import { getRoleByCardId, getRoleByColumnId, hasSufficientRole } from '../lib/permission.helper.js';
@@ -11,8 +10,9 @@ const router = express.Router();
 router.use(requireAuth);
 
 // POST /api/cards
-router.post("/", validateSchema(createCardSchema), asyncHandler(async (req, res)=>{
-    const {columnId, title, description, position} = req.body;
+router.post("/", asyncHandler(async (req, res)=>{
+    const reqData = createCardSchema.parse(req.body);
+    const {columnId, title, description, position} = reqData;
 
     if(!req.user){
         return res.status(401).json({ error: "Authentication required" });
@@ -36,9 +36,10 @@ router.post("/", validateSchema(createCardSchema), asyncHandler(async (req, res)
 }));
 
 //PATCH /api/cards/:id
-router.patch("/:id", validateSchema(updateCardSchema), asyncHandler(async (req, res)=>{
+router.patch("/:id", asyncHandler(async (req, res)=>{
     const id = req.params.id as string;
-    const {title, description, position, columnId} = req.body;
+    const reqData = updateCardSchema.parse(req.body);
+    const {title, description, position, columnId} = reqData;
 
     if(!req.user){
         return res.status(401).json({ error: "Authentication required" });
@@ -78,8 +79,9 @@ router.delete("/:id", asyncHandler(async (req, res)=>{
 }));
 
 //POST api/cards/reorder
-router.post('/reorder', validateSchema(reorderCardsSchema), asyncHandler(async (req, res) => {
-    const {cardId, prevCardId, nextCardId, columnId} = req.body;
+router.post('/reorder', asyncHandler(async (req, res) => {
+    const reqData = reorderCardsSchema.parse(req.body);
+    const {cardId, prevCardId, nextCardId, columnId} = reqData;
 
     if(!req.user){
         return res.status(401).json({ error: "Authentication required" });

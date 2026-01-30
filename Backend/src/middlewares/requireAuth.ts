@@ -1,13 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../lib/auth.js';
+import { asyncHandler } from './asyncHandler.js';
 import { prisma } from '../lib/prisma.js';
 
-export const requireAuth = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
+export const requireAuth = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     // Get token from cookie
     const token = req.cookies.token;
 
@@ -40,7 +36,4 @@ export const requireAuth = async (
     req.user = user;
 
     next();
-  } catch (error) {
-    return res.status(401).json({ error: 'Authentication failed' });
-  }
-};
+});

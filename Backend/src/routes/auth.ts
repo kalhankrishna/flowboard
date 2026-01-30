@@ -8,10 +8,7 @@ import { hashPassword, comparePassword, generateToken } from '../lib/auth.js';
 const router = express.Router();
 
 // POST /api/auth/register
-router.post(
-  '/register',
-  validateSchema(registerSchema),
-  asyncHandler(async (req, res) => {
+router.post('/register', validateSchema(registerSchema), asyncHandler(async (req, res) => {
     const { email, password, name } = req.body;
 
     const existingUser = await prisma.user.findUnique({
@@ -50,10 +47,7 @@ router.post(
 );
 
 // POST /api/auth/login
-router.post(
-  '/login',
-  validateSchema(loginSchema),
-  asyncHandler(async (req, res) => {
+router.post('/login', validateSchema(loginSchema), asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
     const user = await prisma.user.findUnique({

@@ -1,7 +1,6 @@
 import express from 'express';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middlewares/asyncHandler.js';
-import { validateSchema } from '../middlewares/validateSchema.js';
 import { createColumnSchema, updateColumnSchema, reorderColumnsSchema } from '../schemas/column.schema.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
 import { getRoleByBoardId, getRoleByColumnId, hasSufficientRole } from '../lib/permission.helper.js';
@@ -11,8 +10,9 @@ const router = express.Router();
 router.use(requireAuth);
 
 // POST /api/columns
-router.post("/", validateSchema(createColumnSchema), asyncHandler(async(req, res)=>{
-    const {boardId, title, position} = req.body;
+router.post("/", asyncHandler(async(req, res)=>{
+    const reqData = createColumnSchema.parse(req.body);
+    const {boardId, title, position} = reqData;
 
     if(!req.user){
         return res.status(401).json({ error: "Authentication required" });
@@ -35,9 +35,10 @@ router.post("/", validateSchema(createColumnSchema), asyncHandler(async(req, res
 }));
 
 // PATCH /api/columns/:id
-router.patch("/:id", validateSchema(updateColumnSchema), asyncHandler(async(req, res)=>{
+router.patch("/:id", asyncHandler(async(req, res)=>{
     const id = req.params.id as string;
-    const {title, position} = req.body;
+    const reqData = updateColumnSchema.parse(req.body);
+    const {title, position} = reqData;
 
     if(!req.user){
         return res.status(401).json({ error: "Authentication required" });
@@ -77,8 +78,9 @@ router.delete("/:id", asyncHandler(async(req, res)=>{
 }));
 
 // POST /api/columns/reorder
-router.post('/reorder', validateSchema(reorderColumnsSchema), asyncHandler(async (req, res) => {
-    const {columnId, prevColumnId, nextColumnId, boardId} = req.body;
+router.post('/reorder', asyncHandler(async (req, res) => {
+    const reqData = reorderColumnsSchema.parse(req.body);
+    const {columnId, prevColumnId, nextColumnId, boardId} = reqData;
 
     if(!req.user){
         return res.status(401).json({ error: "Authentication required" });
