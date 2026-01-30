@@ -1,4 +1,4 @@
-import { Board, Column, Card, ReorderColumns, ReorderCards, CategorizedBoards } from '@/types/board';
+import { Board, Column, Card, ReorderColumn, ReorderCard, CategorizedBoards } from '@/types/board';
 import { User, RegisterInput, LoginInput } from '@/types/auth';
 import { BoardAccess, ShareBoardInput, UpdateRoleInput } from '@/types/share';
 
@@ -134,7 +134,7 @@ export async function deleteBoard(id: string): Promise<void> {
 }
 
 //Column API calls
-export async function addColumn(boardId: string, title: string, position: number): Promise<Column> {
+export async function addColumn(boardId: string, title: string, position: string): Promise<Column> {
   const response = await apiFetch(`${API_BASE_URL}/api/columns`, {
     method: 'POST',
     headers: {
@@ -150,7 +150,7 @@ export async function addColumn(boardId: string, title: string, position: number
   return response.json();
 }
 
-export async function updateColumn(id: string, title: string, position: number): Promise<Column> {
+export async function updateColumn(id: string, title: string, position: string): Promise<Column> {
   const response = await apiFetch(`${API_BASE_URL}/api/columns/${id}`, {
     method: 'PATCH',
     headers: {'Content-Type': 'application/json' },
@@ -176,11 +176,11 @@ export async function deleteColumn(id: string): Promise<void> {
   return;
 }
 
-export async function reorderColumns(columns: ReorderColumns[]): Promise<void> {
+export async function reorderColumn(data: ReorderColumn): Promise<void> {
   const response = await apiFetch(`${API_BASE_URL}/api/columns/reorder`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ columns })
+    body: JSON.stringify(data)
   });
 
   if (!response.ok) {
@@ -191,7 +191,7 @@ export async function reorderColumns(columns: ReorderColumns[]): Promise<void> {
 }
 
 //Card API calls
-export async function addCard(columnId: string, title: string, description: string | null, position: number): Promise<Card> {
+export async function addCard(columnId: string, title: string, description: string | null, position: string): Promise<Card> {
   const response = await apiFetch(`${API_BASE_URL}/api/cards`, {
     method: 'POST',
     headers: {
@@ -207,7 +207,7 @@ export async function addCard(columnId: string, title: string, description: stri
   return response.json();
 }
 
-export async function updateCard(id: string, title: string, description: string | null, position: number): Promise<Card> {
+export async function updateCard(id: string, title: string, description: string | null, position: string): Promise<Card> {
   const response = await apiFetch(`${API_BASE_URL}/api/cards/${id}`, {
     method: 'PATCH',
     headers: {'Content-Type': 'application/json' },
@@ -233,18 +233,16 @@ export async function deleteCard(id: string): Promise<void> {
   return;
 }
 
-export async function reorderCards(columns: ReorderCards[]): Promise<void> {
+export async function reorderCard(data: ReorderCard): Promise<void> {
   const response = await apiFetch(`${API_BASE_URL}/api/cards/reorder`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ columns })
+    body: JSON.stringify(data)
   });
 
-  if (!response.ok) {
+  if(!response.ok) {
     throw new Error(`Failed to reorder cards: ${response.statusText}`);
   }
-
-  return response.json();
 }
 
 //Board Sharing API Calls

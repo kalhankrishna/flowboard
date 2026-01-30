@@ -130,32 +130,4 @@ router.post('/reorder', validateSchema(reorderColumnsSchema), asyncHandler(async
     res.json({ success: true });
 }));
 
-// router.post('/reorder', validateSchema(reorderColumnsSchema), asyncHandler(async (req, res) => {
-//     const { columns } = req.body as ReorderColumnsInput;
-
-//     if (columns.length === 0) {
-//         return res.json({ success: true });
-//     }
-
-//     if(!req.user){
-//         return res.status(401).json({ error: "Authentication required" });
-//     }
-
-//     const userRole = await getRoleByColumnId(columns[0].id, req.user.id);
-//     if (!userRole || !hasSufficientRole(userRole, "EDITOR")) {
-//         return res.status(403).json({ error: "Not authorized to reorder columns in this board" });
-//     }
-
-//     await prisma.$transaction(
-//         columns.map(column =>
-//         prisma.column.update({
-//             where: { id: column.id },
-//             data: { position: column.position }
-//         })
-//         )
-//     );
-
-//     res.json({ success: true });
-// }));
-
 export default router;

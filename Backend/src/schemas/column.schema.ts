@@ -16,8 +16,8 @@ export const updateColumnSchema = z.object({
 
 export const reorderColumnsSchema = z.object({
   columnId: z.uuid('Invalid column ID'),
-  prevColumnId: z.uuid('Invalid prevColumnId').optional(),
-  nextColumnId: z.uuid('Invalid nextColumnId').optional(),
+  prevColumnId: z.uuid('Invalid prevColumnId').nullable(),
+  nextColumnId: z.uuid('Invalid nextColumnId').nullable(),
   boardId: z.uuid('Invalid board ID'),
 });
 

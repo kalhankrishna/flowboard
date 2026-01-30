@@ -1,18 +1,15 @@
-import { useRef, useCallback, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { addCard, updateCard, deleteCard, reorderCards } from '@/lib/api';
+import { addCard, updateCard, deleteCard, reorderCard } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
-import { Card, ReorderCards } from '@/types/board';
+import { Card, ReorderCard } from '@/types/board';
 import toast from 'react-hot-toast';
 
 export function useCards(boardId: string) {
   const queryClient = useQueryClient();
-  const reorderTimeout = useRef<NodeJS.Timeout | null>(null);
-  const pendingReorder = useRef<ReorderCards[] | null>(null);
   
   //ADD CARD
   const addCardMutation = useMutation({
-    mutationFn: (params: { columnId: string; title: string; description: string | null; position: number }) =>
+    mutationFn: (params: { columnId: string; title: string; description: string | null; position: string }) =>
       addCard(params.columnId, params.title, params.description, params.position),
     
     onSuccess: (newCard, variables) => {
@@ -40,7 +37,7 @@ export function useCards(boardId: string) {
   
   //UPDATE CARD
   const updateCardMutation = useMutation({
-    mutationFn: (params: { id: string; title: string; description: string | null; position: number }) =>
+    mutationFn: (params: { id: string; title: string; description: string | null; position: string }) =>
       updateCard(params.id, params.title, params.description, params.position),
     
     onSuccess: (updatedCard) => {
@@ -104,54 +101,21 @@ export function useCards(boardId: string) {
     }
   });
   
-  //REORDER CARDS (DEBOUNCED)
+  //REORDER CARDS
   const reorderCardsMutation = useMutation({
-    mutationFn: (columns: ReorderCards[]) => reorderCards(columns),
+    mutationFn: (data: ReorderCard) => reorderCard(data),
     
     onError: (error) => {
       console.error('Failed to reorder cards:', error);
+      toast.error('Failed to reorder cards');
       queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
     }
   });
-  
-
-  const handleReorderCards = useCallback((newBoardState: any, affectedColumns: ReorderCards[]) => {
-    queryClient.setQueryData(queryKeys.board(boardId), newBoardState);
-
-    if (reorderTimeout.current) {
-      clearTimeout(reorderTimeout.current);
-    }
-
-    pendingReorder.current = affectedColumns;
-    
-    reorderTimeout.current = setTimeout(() => {
-      reorderCardsMutation.mutate(affectedColumns);
-      pendingReorder.current = null;
-    }, 300);
-  }, [boardId, queryClient, reorderCardsMutation]);
-  
-  useEffect(() => {
-    return () => {
-      if (reorderTimeout.current) {
-        clearTimeout(reorderTimeout.current);
-      }
-      if(pendingReorder.current) {
-        reorderCardsMutation.mutate(pendingReorder.current);
-      }
-    };
-  }, []);
 
   return {
     addCardMutation,
     updateCardMutation,
     deleteCardMutation,
-    handleReorderCards,
-    isReordering: reorderCardsMutation.isPending,
-    clearPendingReorder: () => {
-      if (reorderTimeout.current) {
-        clearTimeout(reorderTimeout.current);
-        reorderTimeout.current = null;
-      }
-    }
+    reorderCardsMutation,
   };
 }

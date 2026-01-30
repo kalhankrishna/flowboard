@@ -1,18 +1,15 @@
-import { useRef, useCallback, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { addColumn, updateColumn, deleteColumn, reorderColumns } from '@/lib/api';
+import { addColumn, updateColumn, deleteColumn, reorderColumn } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
-import { Column, ReorderColumns } from '@/types/board';
+import { Board, Column, ReorderColumn } from '@/types/board';
 import toast from 'react-hot-toast';
 
 export function useColumns(boardId: string) {
   const queryClient = useQueryClient();
-  const reorderTimeout = useRef<NodeJS.Timeout | null>(null);
-  const pendingReorder = useRef<ReorderColumns[] | null>(null);
   
   //ADD COLUMN
   const addColumnMutation = useMutation({
-    mutationFn: (params: { boardId: string; title: string; position: number }) =>
+    mutationFn: (params: { boardId: string; title: string; position: string }) =>
       addColumn(params.boardId, params.title, params.position),
     
     onSuccess: (newColumn) => {
@@ -36,7 +33,7 @@ export function useColumns(boardId: string) {
   
   //UPDATE COLUMN
   const updateColumnMutation = useMutation({
-    mutationFn: (params: { id: string; title: string; position: number }) =>
+    mutationFn: (params: { id: string; title: string; position: string }) =>
       updateColumn(params.id, params.title, params.position),
     
     onSuccess: (updatedColumn) => {
@@ -96,53 +93,21 @@ export function useColumns(boardId: string) {
     }
   });
   
-  //REORDER COLUMNS (DEBOUNCED)
+  //REORDER COLUMNS
   const reorderColumnsMutation = useMutation({
-    mutationFn: (columns: ReorderColumns[]) => reorderColumns(columns),
-    
-    onError: (error) => {
+    mutationFn: (data : ReorderColumn) => reorderColumn(data),
+
+    onError: (error, variables, context) => {
       console.error('Failed to reorder columns:', error);
+      toast.error('Failed to reorder columns');
       queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
     }
   });
-  
-  const handleReorderColumns = useCallback((newBoardState: any, columnPositions: ReorderColumns[]) => {
-    queryClient.setQueryData(queryKeys.board(boardId), newBoardState);
-
-    if (reorderTimeout.current) {
-      clearTimeout(reorderTimeout.current);
-    }
-
-    pendingReorder.current = columnPositions;
-    
-    reorderTimeout.current = setTimeout(() => {
-      reorderColumnsMutation.mutate(columnPositions);
-      pendingReorder.current = null;
-    }, 300);
-  }, [boardId, queryClient, reorderColumnsMutation]);
-
-  useEffect(() => {
-    return () => {
-      if (reorderTimeout.current) {
-        clearTimeout(reorderTimeout.current);
-      }
-      if(pendingReorder.current) {
-        reorderColumnsMutation.mutate(pendingReorder.current);
-      }
-    };
-  }, []);
   
   return {
     addColumnMutation,
     updateColumnMutation,
     deleteColumnMutation,
-    handleReorderColumns,
-    isReordering: reorderColumnsMutation.isPending,
-    clearPendingReorder: () => {
-      if (reorderTimeout.current) {
-        clearTimeout(reorderTimeout.current);
-        reorderTimeout.current = null;
-      }
-    }
+    reorderColumnsMutation
   };
 }

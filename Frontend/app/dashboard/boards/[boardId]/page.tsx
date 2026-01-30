@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useId, useRef} from "react";
-import { DndContext, DragEndEvent, DragMoveEvent, DragOverlay, DragStartEvent, UniqueIdentifier, closestCorners } from '@dnd-kit/core';
+import { DndContext, DragEndEvent, DragOverEvent, DragOverlay, DragStartEvent, UniqueIdentifier, pointerWithin } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove, horizontalListSortingStrategy} from '@dnd-kit/sortable';
 import DroppableColumn from "@/components/DroppableColumn";
 import SortableCard from "@/components/SortableCard";
@@ -12,9 +12,8 @@ import ColumnModal from "@/components/ColumnModal";
 import { useBoard, useCards, useColumns, useSharing } from "@/hooks";
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
-import LoadingOverlay from "@/components/LoadingOverlay";
 import * as React from 'react'
-import { Column } from "@/types/board";
+import { Column, ReorderCard, ReorderColumn } from "@/types/board";
 import ShareModal from '@/components/ShareModal';
 import { useAuthStore } from '@/store/authStore';
 import { BoardRole } from '@/types/share';
@@ -28,8 +27,8 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
 
   const {getBoardQuery} = useBoard(boardId);
   const {data: board, isLoading, error} = getBoardQuery;
-  const {addCardMutation, updateCardMutation, deleteCardMutation, handleReorderCards, isReordering: isReorderingCards, clearPendingReorder: clearCardReorder} = useCards(boardId);
-  const { addColumnMutation, updateColumnMutation, deleteColumnMutation, handleReorderColumns, isReordering: isReorderingColumns, clearPendingReorder: clearColumnReorder } = useColumns(boardId);
+  const {addCardMutation, updateCardMutation, deleteCardMutation, reorderCardsMutation} = useCards(boardId);
+  const { addColumnMutation, updateColumnMutation, deleteColumnMutation, reorderColumnsMutation } = useColumns(boardId);
 
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
 
@@ -77,7 +76,6 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
 
   const isOwner = userRole === 'OWNER';
   const canEdit = userRole === 'OWNER' || userRole === 'EDITOR';
-  const canView = userRole !== null;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -88,7 +86,9 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     })
   );
 
-  const isReordering = isReorderingCards || isReorderingColumns;
+  const isPendingAnyMutation = (addCardMutation.isPending || updateCardMutation.isPending || deleteCardMutation.isPending || 
+  addColumnMutation.isPending || updateColumnMutation.isPending || deleteColumnMutation.isPending || 
+  reorderCardsMutation.isPending || reorderColumnsMutation.isPending);
 
   //LOADING/ERROR STATES
   if (isLoading) {
@@ -104,13 +104,13 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
   }
 
   //Helpers
-  function findItem(id: string) {
+  function findCard(id: string) {
     if (!board || !id) return undefined;
     const allItems = board.columns.flatMap(c => c.cards);
     return allItems.find(item => item.id === id);
   }
 
-  function findValueOfItems(id: string , type: string) {
+  function findContainer(id: string , type: string) {
     if (!board || !id) return undefined;
     
     if (type === 'container') {
@@ -129,7 +129,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
   }
 
   function openEditCardModal(cardId: string) {
-    const container = findValueOfItems(cardId, 'card');
+    const container = findContainer(cardId, 'card');
     setCardModal({ 
       open: true, 
       mode: 'edit', 
@@ -142,12 +142,12 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     setCardModal({ open: false, mode: null, columnId: null, cardId: null });
   }
 
-  function handleAddCard(columnId: string, title: string, description: string | null, position: number) {
+  function handleAddCard(columnId: string, title: string, description: string | null, position: string) {
     addCardMutation.mutate({ columnId, title, description, position });
     closeCardModal();
   }
 
-  function handleEditCard(cardId: string, title: string, description: string | null, position: number) {
+  function handleEditCard(cardId: string, title: string, description: string | null, position: string) {
     updateCardMutation.mutate({ id: cardId, title,  description, position });
     closeCardModal();
   }
@@ -174,12 +174,12 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     setColumnModal({ open: false, mode: null, columnId: null });
   }
 
-  function handleAddColumn(title: string, position: number) {
+  function handleAddColumn(title: string, position: string) {
     addColumnMutation.mutate({ boardId, title, position });
     closeColumnModal();
   }
 
-  function handleEditColumn(columnId: string, title: string, position: number) {
+  function handleEditColumn(columnId: string, title: string, position: string) {
     updateColumnMutation.mutate({ id: columnId, title, position });
     closeColumnModal();
   }
@@ -196,7 +196,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     
     setActiveId(active.id);
 
-    const activeContainer = findValueOfItems(active.id.toString(), 'card');
+    const activeContainer = findContainer(active.id.toString(), 'card');
     if (activeContainer) {
       dragOriginRef.current = {
         container: activeContainer,
@@ -205,46 +205,59 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     }
   }
 
-  const handleDragMove = (event: DragMoveEvent) => {
+  const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
     
     if (!over || active.id === over.id) return;
 
-    const activeContainer = findValueOfItems(active.id.toString(), 'card');
-    const overContainer = findValueOfItems(over.id.toString(), 'container') || findValueOfItems(over.id.toString(), 'card');
+    const activeContainer = findContainer(active.id.toString(), 'card');
+    const overContainer = findContainer(over.id.toString(), 'container') || findContainer(over.id.toString(), 'card');
     
-    if (!activeContainer || !overContainer) return;
+    if (!activeContainer || !overContainer) {
+      return
+    };
 
     const activeContainerIndex = board.columns.findIndex(c => c.id === activeContainer.id);
     const overContainerIndex = board.columns.findIndex(c => c.id === overContainer.id);
     
     const activeItemIndex = activeContainer.cards.findIndex(i => i.id === active.id);
 
-    const isOverCard = findValueOfItems(over.id.toString(), 'card') !== undefined;
+    const isOverCard = findContainer(over.id.toString(), 'card') !== undefined;
+    console.log("isOverCard: ",isOverCard);
     const overItemIndex = isOverCard
       ? overContainer.cards.findIndex(i => i.id === over.id)
       : overContainer.cards.length;
 
     const isSameContainer = activeContainerIndex === overContainerIndex;
-    const isSamePosition = isSameContainer && activeItemIndex === overItemIndex;
-    
-    if (isSamePosition) return;
 
-    if(!isSameContainer){
+    const newColumns = board.columns.map(col => ({
+      ...col,
+      cards: [...col.cards]
+    }));
 
-      const newColumns = board.columns.map(col => ({
-        ...col,
-        cards: [...col.cards]
-      }));
+    const newBoardState = {
+      ...board,
+      columns: newColumns
+    };
+
+    if(isSameContainer){
+      if(!isOverCard){
+        const overIndex = overContainer.cards.length - 1;
+        const movedCard = arrayMove(activeContainer.cards, activeItemIndex, overIndex);
+        newColumns[activeContainerIndex].cards = movedCard;
+        
+        queryClient.setQueryData(queryKeys.board(boardId), newBoardState);
+        return;
+      }
+      const movedCard = arrayMove(activeContainer.cards, activeItemIndex, overItemIndex);
+      newColumns[activeContainerIndex].cards = movedCard;
       
+      queryClient.setQueryData(queryKeys.board(boardId), newBoardState);
+    }
+    else {
       const [movedCard] = newColumns[activeContainerIndex].cards.splice(activeItemIndex, 1);
       newColumns[overContainerIndex].cards.splice(overItemIndex, 0, movedCard);
       
-      const newBoardState = {
-        ...board,
-        columns: newColumns
-      };
-
       queryClient.setQueryData(queryKeys.board(boardId), newBoardState);
     }
   };
@@ -258,12 +271,12 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
       return;
     }
 
-    const isActiveCard = findValueOfItems(active.id.toString(), 'card') !== undefined;
+    const isActiveCard = findContainer(active.id.toString(), 'card') !== undefined;
 
     //SCENARIO 1: Dragging a COLUMN
     if (!isActiveCard) {
-      const activeColumn = findValueOfItems(active.id.toString(), 'container');
-      const overColumn = findValueOfItems(over.id.toString(), 'container');
+      const activeColumn = findContainer(active.id.toString(), 'container');
+      const overColumn = findContainer(over.id.toString(), 'container');
 
       if (!activeColumn || !overColumn) {
         setActiveId(null);
@@ -281,13 +294,17 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
           ...board,
           columns: newColumns
         };
-        
-        const columnPositions = newColumns.map((col, index) => ({
-          id: col.id,
-          position: index
-        }));
 
-        handleReorderColumns(newBoardState, columnPositions);
+        const reorderedColumnData: ReorderColumn = {
+          columnId: activeColumn.id,
+          prevColumnId: newIndex > 0 ? board.columns[newIndex].id : null,
+          nextColumnId: newIndex < board.columns.length - 1 ? board.columns[newIndex + 1].id : null,
+          boardId: board.id
+        }
+
+        queryClient.setQueryData(queryKeys.board(boardId), newBoardState);
+
+        reorderColumnsMutation.mutate(reorderedColumnData);
         
         setActiveId(null);
         dragOriginRef.current = null;
@@ -295,105 +312,50 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
       }
     }
 
-    //SCENARIO 2 & 3: Dragging a CARD
+    //SCENARIO 2: Dragging a CARD
     if(!dragOriginRef.current){
       setActiveId(null);
       dragOriginRef.current = null;
       return;
     }
-    const activeContainer = dragOriginRef.current.container;
-    const overContainer = findValueOfItems(over.id.toString(), 'container') || findValueOfItems(over.id.toString(), 'card');
-    
-    if (!activeContainer || !overContainer) {
+
+    const activeColumn = findContainer(active.id.toString(), 'card');
+    if(!activeColumn){
+      setActiveId(null);
+      dragOriginRef.current = null;
+      return;
+    }
+    const activeCardIndex = activeColumn.cards.findIndex(i => i.id === active.id);
+
+    const isSamePosition = (dragOriginRef.current.container.id === activeColumn.id) && (dragOriginRef.current.itemIndex === activeCardIndex);
+
+    if(isSamePosition){
       setActiveId(null);
       dragOriginRef.current = null;
       return;
     }
 
-    const activeItemIndexPrev = dragOriginRef.current.itemIndex;
-    const activeItemIndexNew = overContainer.cards.findIndex(i => i.id === active.id);
-    const overItemIndex = overContainer.cards.findIndex(i => i.id === over.id);
-
-    const activeContainerIndex = board.columns.findIndex(c => c.id === activeContainer.id);
-    const overContainerIndex = board.columns.findIndex(c => c.id === overContainer.id);
-    
-    const newColumns = board.columns.map(col => ({
-      ...col,
-      cards: [...col.cards]
-    }));
-
-    const newBoardState = {
-      ...board,
-      columns: newColumns
-    };
-
-    const affectedColumns = [];
-
-    if(activeContainer.id === overContainer.id && active.id !== over.id) {
-      if(activeContainer.id === over.id){
-        setActiveId(null);
-        dragOriginRef.current = null;
-        return;
-      }
-      const reorderedCards = arrayMove(newColumns[activeContainerIndex].cards, activeItemIndexPrev, overItemIndex);
-      newColumns[activeContainerIndex].cards = reorderedCards;
-
-      affectedColumns.push({
-        columnId: activeContainer.id,
-        cards: reorderedCards.map((card, index) => ({
-          id: card.id,
-          position: index
-        }))
-      });
-
-      handleReorderCards(newBoardState, affectedColumns);
-
-      setActiveId(null);
-      dragOriginRef.current = null;
-      return;
+    const reorderedCardData: ReorderCard = {
+      cardId: active.id.toString(),
+      columnId: activeColumn.id,
+      prevCardId: activeCardIndex !== 0 ? activeColumn.cards[activeCardIndex - 1].id : null,
+      nextCardId: activeCardIndex < activeColumn.cards.length - 1 ? activeColumn.cards[activeCardIndex + 1].id : null,
     }
 
-    if(activeContainer.id !== overContainer.id) {
-      const reorderedCards = arrayMove(newColumns[overContainerIndex].cards, activeItemIndexNew, overItemIndex);
-      newColumns[overContainerIndex].cards = reorderedCards;
+    reorderCardsMutation.mutate(reorderedCardData);
 
-      affectedColumns.push({
-        columnId: overContainer.id,
-        cards: reorderedCards.map((card, index) => ({
-          id: card.id,
-          position: index
-        }))
-      });
-
-      affectedColumns.push({
-        columnId: activeContainer.id,
-        cards: newColumns[activeContainerIndex].cards.map((card, index) => ({
-          id: card.id,
-          position: index
-        }))
-      });
-
-      handleReorderCards(newBoardState, affectedColumns);
-
-      setActiveId(null);
-      dragOriginRef.current = null;
-      return;
-    }
     setActiveId(null);
     dragOriginRef.current = null;
-    return;
   };
 
   const handleDragCancel = () => {
     setActiveId(null);
     dragOriginRef.current = null;
-    clearCardReorder();
-    clearColumnReorder();
     queryClient.invalidateQueries({queryKey: queryKeys.board(boardId), refetchType: 'active', exact: true});
   };
 
   return (
-    <DndContext id={id} sensors={sensors} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel} collisionDetection={closestCorners}>
+    <DndContext id={id} sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel} collisionDetection={pointerWithin}>
       <div className="p-8">
         <h1 className="text-2xl font-bold mb-2">Kanban Board</h1>
         <div className="flex justify-end">
@@ -407,7 +369,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
           )}
           {
             canEdit && (
-              <button onClick={openAddColumnModal} disabled={addColumnMutation.isPending} className="mb-4 bg-green-500 text-white p-2 rounded w-full max-w-40">Add Column</button>
+              <button onClick={openAddColumnModal} disabled={isPendingAnyMutation} className="mb-4 bg-green-500 text-white p-2 rounded w-full max-w-40">Add Column</button>
             )
           }
         </div>
@@ -415,7 +377,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
           <SortableContext items={board.columns.map(column => column.id)} strategy={horizontalListSortingStrategy}>
             {
               board.columns.map(column => (
-                <DroppableColumn key={column.id} canEdit={canEdit} column={column} onAddCard={openAddCardModal} onEdit={openEditColumnModal} onDelete={handleDeleteColumn} isAddPending={addColumnMutation.isPending} isEditPending={updateColumnMutation.isPending} isDeletePending={deleteColumnMutation.isPending}>
+                <DroppableColumn key={column.id} canEdit={canEdit} column={column} onAddCard={openAddCardModal} onEdit={openEditColumnModal} onDelete={handleDeleteColumn} isPending={isPendingAnyMutation}>
                   <SortableContext items={column.cards.map(card => card.id)} strategy={verticalListSortingStrategy}>
                     {column.cards.map(card => (
                       <SortableCard 
@@ -424,9 +386,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
                         card={card} 
                         onEdit={openEditCardModal}
                         onDelete={handleDeleteCard}
-                        isAddPending={addCardMutation.isPending}
-                        isEditPending={updateCardMutation.isPending}
-                        isDeletePending={deleteCardMutation.isPending}
+                        isPending={isPendingAnyMutation}
                       />
                     ))}
                   </SortableContext>
@@ -438,15 +398,13 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
         {cardModal.open && cardModal.columnId && (
           <CardModal 
             mode={cardModal.mode!}
-            column={findValueOfItems(cardModal.columnId, 'container')!}
+            column={findContainer(cardModal.columnId, 'container')!}
             cardId={cardModal.cardId}
-            existingCard={cardModal.cardId ? findItem(cardModal.cardId) : undefined}
+            existingCard={cardModal.cardId ? findCard(cardModal.cardId) : undefined}
             onAddCard={handleAddCard}
             onEditCard={handleEditCard}
             closeCardModal={closeCardModal}
-            isAddPending={addCardMutation.isPending}
-            isEditPending={updateCardMutation.isPending}
-            isDeletePending={deleteCardMutation.isPending}
+            isPending={isPendingAnyMutation}
           />
         )}
         {columnModal.open && (
@@ -454,13 +412,11 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
             mode={columnModal.mode!}
             board={board}
             columnId={columnModal.columnId}
-            existingColumn={columnModal.columnId ? findValueOfItems(columnModal.columnId, 'container') : undefined}
+            existingColumn={columnModal.columnId ? findContainer(columnModal.columnId, 'container') : undefined}
             onAddColumn={handleAddColumn}
             onEditColumn={handleEditColumn}
             closeColumnModal={closeColumnModal}
-            isAddPending={addColumnMutation.isPending}
-            isEditPending={updateColumnMutation.isPending}
-            isDeletePending={deleteColumnMutation.isPending}
+            isPending={isPendingAnyMutation}
           />
         )}
         {shareModalOpen && (
@@ -471,16 +427,16 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
         )}
       </div>
       <DragOverlay>
-        {activeId && findItem(activeId.toString()) && (
+        {activeId && findCard(activeId.toString()) && (
           <div className="bg-slate-300 rounded-md my-2 p-2 shadow-md opacity-50">
-            <CardContent card={findItem(activeId.toString())!} />
+            <CardContent card={findCard(activeId.toString())!} />
           </div>
         )}
 
-        {activeId && findValueOfItems(activeId.toString(), 'container') && (
+        {activeId && findContainer(activeId.toString(), 'container') && (
           <div className="bg-gray-100 p-4 rounded-lg w-full min-h-140 shadow-md opacity-50">
-            <ColumnContent column={findValueOfItems(activeId.toString(), 'container')!}>
-              {findValueOfItems(activeId.toString(), 'container')?.cards.map(card => (
+            <ColumnContent column={findContainer(activeId.toString(), 'container')!}>
+              {findContainer(activeId.toString(), 'container')?.cards.map(card => (
                 <div key={card.id} className="bg-slate-300 rounded-md my-2 p-2 shadow-md">
                   <CardContent card={card} />
                 </div>
@@ -489,8 +445,6 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
           </div>
         )}
       </DragOverlay>
-
-      {isReordering && <LoadingOverlay message="Saving changes..." />}
     </DndContext>
   );
 }

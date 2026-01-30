@@ -3,7 +3,7 @@ export interface Card {
   columnId: string;
   title: string;
   description: string | null;
-  position: number;
+  position: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -12,7 +12,7 @@ export interface Column {
   id: string;
   boardId: string;
   title: string;
-  position: number;
+  position: string;
   createdAt: string;
   updatedAt: string;
   cards: Card[];
@@ -32,15 +32,16 @@ export interface CategorizedBoards {
   sharedBoards: Board[];
 }
 
-export interface ReorderCards {
+export interface ReorderCard {
+  cardId: string;
+  prevCardId: string | null;
+  nextCardId: string | null;
   columnId: string;
-  cards: Array<{
-    id: string;
-    position: number;
-  }>;
 }
 
-export interface ReorderColumns {
-  id: string;
-  position: number;
+export interface ReorderColumn {
+  columnId: string;
+  prevColumnId: string | null;
+  nextColumnId: string | null;
+  boardId: string;
 }

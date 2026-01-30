@@ -11,20 +11,16 @@ export default function ColumnModal({
   onAddColumn,
   onEditColumn,
   closeColumnModal,
-  isAddPending,
-  isEditPending,
-  isDeletePending
+  isPending
 }: {
   mode: 'add' | 'edit';
   board: Board;
   columnId: string | null;
   existingColumn?: Column;
-  onAddColumn: (title: string, position: number) => void;
-  onEditColumn: (columnId: string, title: string, position: number) => void;
+  onAddColumn: (title: string, position: string) => void;
+  onEditColumn: (columnId: string, title: string, position: string) => void;
   closeColumnModal: () => void;
-  isAddPending: boolean;
-  isEditPending: boolean;
-  isDeletePending: boolean;
+  isPending: boolean;
 }) {
   const [title, setTitle] = useState(existingColumn?.title || '');
 
@@ -44,7 +40,7 @@ export default function ColumnModal({
     if (mode === 'add') {
       onAddColumn(
         title.trim(),
-        board.columns.length
+        (board.columns.length*1.0).toString()
       );
     } else if (mode === 'edit' && columnId && existingColumn) {
       onEditColumn(
@@ -71,8 +67,8 @@ export default function ColumnModal({
           autoFocus
         />
         
-        <button type="submit" disabled={isAddPending || isEditPending || isDeletePending} className="bg-blue-500 text-white p-2 rounded">
-          {mode === 'add' ? 'Add Column' : isEditPending ? 'Saving...' : 'Save Changes'}
+        <button type="submit" disabled={isPending} className="bg-blue-500 text-white p-2 rounded">
+          {mode === 'add' ? 'Add Column' : isPending ? 'Saving...' : 'Save Changes'}
         </button>
         
         <button

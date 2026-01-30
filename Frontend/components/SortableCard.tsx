@@ -10,17 +10,13 @@ export default function SortableCard({
   card,
   onEdit,
   onDelete,
-  isAddPending,
-  isEditPending,
-  isDeletePending
+  isPending
 }: {
   canEdit: boolean;
   card: Card;
   onEdit: (cardId: string) => void;
   onDelete: (cardId: string) => void;
-  isAddPending: boolean;
-  isEditPending: boolean;
-  isDeletePending: boolean;
+  isPending: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
     id: card.id 
@@ -54,7 +50,7 @@ export default function SortableCard({
         <div className='absolute top-2 right-2 flex items-center justify-between gap-x-2'>
           <button
             onPointerDown={(e) => e.stopPropagation()}
-            disabled={isAddPending || isEditPending || isDeletePending}
+            disabled={isPending}
             onClick={handleEditClick}
             className="opacity-0 group-hover:opacity-100 bg-blue-500 text-white px-2 py-1 rounded text-sm transition"
           >
@@ -62,7 +58,7 @@ export default function SortableCard({
           </button>
           <button
             onPointerDown={(e) => e.stopPropagation()}
-            disabled={isAddPending || isEditPending || isDeletePending}
+            disabled={isPending}
             onClick={handleDeleteClick}
             className="opacity-0 group-hover:opacity-100 bg-red-500 text-white px-2 py-1 rounded text-sm transition"
           >

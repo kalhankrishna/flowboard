@@ -51,7 +51,7 @@ router.patch("/:id", validateSchema(updateCardSchema), asyncHandler(async (req, 
     
     const updatedCard = await prisma.card.update({
         where: { id },
-        data: {title, description, position, columnId},
+        data: {title, description : description || "", position, columnId},
     });
 
     res.json(updatedCard);

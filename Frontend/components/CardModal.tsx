@@ -11,20 +11,16 @@ export default function CardModal({
   onAddCard,
   onEditCard,
   closeCardModal,
-  isAddPending,
-  isEditPending,
-  isDeletePending
+  isPending
 }: {
   mode: 'add' | 'edit';
   column: Column;
   cardId: string | null;
   existingCard?: Card;
-  onAddCard: (columnId: string, title: string, description: string | null, position: number) => void;
-  onEditCard: (cardId: string, title: string, description: string | null, position: number) => void;
+  onAddCard: (columnId: string, title: string, description: string | null, position: string) => void;
+  onEditCard: (cardId: string, title: string, description: string | null, position: string) => void;
   closeCardModal: () => void;
-  isAddPending: boolean;
-  isEditPending: boolean;
-  isDeletePending: boolean;
+  isPending: boolean;
 }) {
   const [title, setTitle] = useState(existingCard?.title || '');
   const [description, setDescription] = useState(existingCard?.description || '');
@@ -49,7 +45,7 @@ export default function CardModal({
         column.id,
         title.trim(),
         description.trim() || null,
-        column.cards.length
+        (column.cards.length*1.0).toString()
       );
     } else if (mode === 'edit' && cardId && existingCard) {
       onEditCard(
@@ -84,8 +80,8 @@ export default function CardModal({
           className="border p-2 w-full mb-4"
         />
         
-        <button type="submit" disabled={isAddPending || isEditPending || isDeletePending} className="bg-blue-500 text-white p-2 rounded">
-          {mode === 'add' ? 'Add Card' : isEditPending ? 'Saving...' : 'Save Changes'}
+        <button type="submit" disabled={isPending} className="bg-blue-500 text-white p-2 rounded">
+          {mode === 'add' ? 'Add Card' : isPending ? 'Saving...' : 'Save Changes'}
         </button>
         
         <button
