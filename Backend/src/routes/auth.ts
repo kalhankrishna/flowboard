@@ -91,19 +91,15 @@ router.post('/login', asyncHandler(async (req, res) => {
 );
 
 // POST /api/auth/refresh
-router.post('/refresh', asyncHandler(async (req, res) => {
+router.post('/refresh', (req, res) => {
   const { refreshToken } = req.cookies;
 
   if (!refreshToken) {
-    return res.status(401).json({ error: 'No refresh token', code: 'INVALID_REFRESH_TOKEN' });
+    return res.status(401).json({ error: 'No refresh token', code: 'NO_REFRESH_TOKEN' });
   }
 
   try {
     const decoded = verifyToken(refreshToken);
-
-    if (!decoded) {
-      return res.status(401).json({ error: 'Invalid or expired refresh token', code: 'INVALID_REFRESH_TOKEN'});
-    }
 
     const newAccessToken = generateAccessToken(decoded.userId);
     const newRefreshToken = generateRefreshToken(decoded.userId);
@@ -122,7 +118,7 @@ router.post('/refresh', asyncHandler(async (req, res) => {
     res.clearCookie('refreshToken');
     res.status(401).json({ error: 'Invalid or expired refresh token', code: 'INVALID_REFRESH_TOKEN'});
   }
-}));
+});
 
 // POST /api/auth/logout
 router.post('/logout', (req, res) => {

@@ -18,6 +18,7 @@ export interface LoginInput {
 export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  isInitialized: boolean;
 
   setUser: (user: User | null) => void;
   clearUser: () => void;

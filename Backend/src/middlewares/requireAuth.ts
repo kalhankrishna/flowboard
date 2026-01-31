@@ -13,10 +13,6 @@ export const requireAuth = asyncHandler(async (req: Request, res: Response, next
     const token = authHeader.replace('Bearer ', '');
     const payload = verifyToken(token);
 
-    if (!payload) {
-      return res.status(401).json({ error: 'Invalid or expired token', code: 'TOKEN_EXPIRED' });
-    }
-
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
       select: {

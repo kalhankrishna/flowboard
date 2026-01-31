@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { addColumn, updateColumn, deleteColumn, reorderColumn } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
-import { Board, Column, ReorderColumn } from '@/types/board';
+import { Column, ReorderColumn } from '@/types/board';
 import toast from 'react-hot-toast';
 
 export function useColumns(boardId: string) {

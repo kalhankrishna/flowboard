@@ -32,12 +32,7 @@ export function generateRefreshToken(userId: string): string {
 }
 
 //Verify JWT token
-export function verifyToken(token: string): { userId: string } | null {
-  try {
-    const payload = jwt.verify(token, JWT_SECRET) as { userId: string };
-    return payload;
-  } catch (error) {
-    console.error("Token verification failed:", error);
-    return null;
-  }
+export function verifyToken(token: string): { userId: string } {
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+    return decoded;
 }

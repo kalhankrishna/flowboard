@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { use, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Board } from '@/types/board';
 import { useBoard } from '@/hooks';
 
