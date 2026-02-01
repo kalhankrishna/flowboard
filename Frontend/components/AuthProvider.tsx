@@ -4,7 +4,7 @@ import { useAuthHydration, useAuthSync } from '@/hooks';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   useAuthHydration();
-  //useAuthSync();
+  useAuthSync();
   
   return <>{children}</>;
 }

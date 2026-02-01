@@ -50,7 +50,6 @@ async function main() {
       boardId: board.id,
       title: 'To Do',
       position: new Prisma.Decimal(1.0),
-      version: 1,
     },
   });
 
@@ -59,7 +58,6 @@ async function main() {
       boardId: board.id,
       title: 'In Progress',
       position: new Prisma.Decimal(2.0),
-      version: 1,
     },
   });
 
@@ -68,7 +66,6 @@ async function main() {
       boardId: board.id,
       title: 'Done',
       position: new Prisma.Decimal(3.0),
-      version: 1,
     },
   });
 
@@ -83,21 +80,18 @@ async function main() {
         title: 'Design homepage',
         description: 'Create mockups and wireframes',
         position: new Prisma.Decimal(1.0),
-        version: 1,
       },
       {
         columnId: todoColumn.id,
         title: 'Setup database',
         description: 'Configure PostgreSQL and migrations',
         position: new Prisma.Decimal(2.0),
-        version: 1,
       },
       {
         columnId: todoColumn.id,
         title: 'Write API documentation',
         description: 'Document all REST endpoints',
         position: new Prisma.Decimal(3.0),
-        version: 1,
       },
     ],
   });
@@ -110,14 +104,12 @@ async function main() {
         title: 'Build REST API',
         description: 'Implement CRUD endpoints',
         position: new Prisma.Decimal(1.0),
-        version: 1,
       },
       {
         columnId: inProgressColumn.id,
         title: 'Add drag & drop',
         description: 'Integrate dnd-kit library',
         position: new Prisma.Decimal(2.0),
-        version: 1,
       },
     ],
   });
@@ -130,14 +122,12 @@ async function main() {
         title: 'Project setup',
         description: 'Initialize Next.js and Express',
         position: new Prisma.Decimal(1.0),
-        version: 1,
       },
       {
         columnId: doneColumn.id,
         title: 'Configure Prisma',
         description: 'Setup ORM and run migrations',
         position: new Prisma.Decimal(2.0),
-        version: 1,
       },
     ],
   });
