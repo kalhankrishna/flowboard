@@ -96,6 +96,18 @@ router.post('/reorder', asyncHandler(async (req, res) => {
         orderBy: { position: 'asc' }
     });
 
+    if (prevColumnId && !allColumnsInBoard.find(c => c.id === prevColumnId)) {
+        return res.status(400).json({ 
+            error: 'Previous column reference not found in target board'
+        });
+    }
+
+    if (nextColumnId && !allColumnsInBoard.find(c => c.id === nextColumnId)) {
+        return res.status(400).json({ 
+            error: 'Next column reference not found in target board'
+        });
+    }
+
     const columnsToCheck = allColumnsInBoard.filter(c => c.id !== columnId);
 
     if(needsRebalancing(columnsToCheck)){

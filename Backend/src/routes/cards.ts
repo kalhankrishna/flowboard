@@ -98,6 +98,18 @@ router.post('/reorder', asyncHandler(async (req, res) => {
         select: { id: true, position: true }
     });
 
+    if (prevCardId && !allCardsInColumn.find(c => c.id === prevCardId)) {
+        return res.status(400).json({ 
+            error: 'Previous card reference not found in target column'
+        });
+    }
+
+    if (nextCardId && !allCardsInColumn.find(c => c.id === nextCardId)) {
+        return res.status(400).json({ 
+            error: 'Next card reference not found in target column'
+        });
+    }
+
     const cardsToCheck = allCardsInColumn.filter(c => c.id !== cardId);
 
     if(needsRebalancing(cardsToCheck)){
