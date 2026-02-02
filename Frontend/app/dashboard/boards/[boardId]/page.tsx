@@ -9,7 +9,7 @@ import CardContent from "@/components/CardContent";
 import ColumnContent from "@/components/ColumnContent";
 import CardModal from "@/components/CardModal";
 import ColumnModal from "@/components/ColumnModal";
-import { useBoard, useCards, useColumns, useSharing } from "@/hooks";
+import { useBoard, useCards, useColumns, useSharing, useBoardRoom } from "@/hooks";
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import * as React from 'react'
@@ -22,6 +22,9 @@ import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 
 export default function BoardPage({ params }: { params: Promise<{ boardId: string }> }) {
   const { boardId } = React.use(params);
+
+  const { isInRoom, roomError } = useBoardRoom(boardId);
+
   const id = useId();
   const queryClient = useQueryClient();
 
