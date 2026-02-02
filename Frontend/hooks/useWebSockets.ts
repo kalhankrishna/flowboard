@@ -29,7 +29,6 @@ export function useWebSockets() {
 
     // Reconnect if token changed on refresh
     if (socket && tokenRef.current !== accessToken) {
-      console.log('Access token changed, reconnecting socket...');
       socket.disconnect();
       socket = null;
     }
@@ -48,13 +47,11 @@ export function useWebSockets() {
 
       // Connection handlers
       socket.on('connect', () => {
-        console.log('Socket connected:', newSocket.id);
         setIsConnected(true);
         setSocketId(newSocket.id ?? null);
       });
 
       socket.on('disconnect', (reason) => {
-        console.log('Socket disconnected:', reason);
         setIsConnected(false);
         setSocketId(null);
       });

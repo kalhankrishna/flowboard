@@ -223,7 +223,6 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     const activeItemIndex = activeContainer.cards.findIndex(i => i.id === active.id);
 
     const isOverCard = findContainer(over.id.toString(), 'card') !== undefined;
-    console.log("isOverCard: ",isOverCard);
     const overItemIndex = isOverCard
       ? overContainer.cards.findIndex(i => i.id === over.id)
       : overContainer.cards.length;

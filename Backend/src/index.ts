@@ -30,14 +30,14 @@ const io = new Server(httpServer, {
 
 io.use(authSocketMiddleware);
 
-io.on('connection', (socket) => {
-  const userId = socket.data.user;
-  console.log(`User connected: ${userId} (${socket.id})`);
+// io.on('connection', (socket) => {
+//   const userId = socket.data.userId;
+//   console.log(`User connected: ${userId} (${socket.id})`);
 
-  socket.on('disconnect', () => {
-    console.log(`User disconnected: ${userId} (${socket.id})`);
-  });
-});
+//   socket.on('disconnect', () => {
+//     console.log(`User disconnected: ${userId} (${socket.id})`);
+//   });
+// });
 
 app.locals.io = io;
 
