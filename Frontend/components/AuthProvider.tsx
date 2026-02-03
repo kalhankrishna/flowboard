@@ -13,8 +13,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    const handleTokenRefresh = (e: CustomEvent<{ accessToken: string }>) => {
-      setToken(e.detail.accessToken);
+    const handleTokenRefresh = (e: Event) => {
+      const customEvent = e as CustomEvent<{ accessToken: string }>;
+      setToken(customEvent.detail.accessToken);
     };
 
     const handleSessionExpired = () => {
@@ -29,15 +30,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearToken();
       localStorage.removeItem('accessToken');
       router.push('/login');
-    }
+    };
 
-    window.addEventListener('auth:token-refreshed', handleTokenRefresh as EventListener);
-    window.addEventListener('auth:session-expired', handleSessionExpired as EventListener);
-    window.addEventListener('auth:unauthorized', handleUnauthorized as EventListener);
+    window.addEventListener('auth:token-refreshed', handleTokenRefresh);
+    window.addEventListener('auth:session-expired', handleSessionExpired);
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+
     return () => {
-      window.removeEventListener('auth:token-refreshed', handleTokenRefresh as EventListener);
-      window.removeEventListener('auth:session-expired', handleSessionExpired as EventListener);
-      window.removeEventListener('auth:unauthorized', handleUnauthorized as EventListener);
+      window.removeEventListener('auth:token-refreshed', handleTokenRefresh);
+      window.removeEventListener('auth:session-expired', handleSessionExpired);
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
     };
   }, []);
   
