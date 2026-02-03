@@ -11,7 +11,7 @@ import { useQueryClient } from '@tanstack/react-query';
 export default function Navbar() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
-  const clearUser = useAuthStore((state) => state.clearUser);
+  const {clearUser, clearToken} = useAuthStore();
   const queryClient = useQueryClient();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -22,9 +22,13 @@ export default function Navbar() {
     try {
       // Call logout API (clears cookie)
       await logoutAPI();
+
+      //Clear LocalStorage
+      localStorage.removeItem('accessToken');
       
       // Clear Zustand state
       clearUser();
+      clearToken();
       
       // Show success toast
       toast.success('Logged out successfully');

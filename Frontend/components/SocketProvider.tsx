@@ -22,57 +22,39 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [socketId, setSocketId] = useState<string | null>(null);
-  const { user } = useAuthStore();
-  const tokenRef = useRef<string | null>(null);
+  const { user, accessToken } = useAuthStore();
 
   useEffect(() => {
-    const accessToken = localStorage.getItem('accessToken');
+    if (!user || !accessToken) return;
 
-    if (!user || !accessToken) {
-      if (socket) {
-        socket.disconnect();
-        setSocket(null);
-        setIsConnected(false);
-        setSocketId(null);
-        tokenRef.current = null;
-      }
-      return;
-    }
+    const newSocket = io(SOCKET_URL, {
+      auth: { token: accessToken },
+      autoConnect: true,
+    });
 
-    if (socket && tokenRef.current !== accessToken) {
-      socket.disconnect();
+    newSocket.on('connect', () => {
+      setIsConnected(true);
+      setSocketId(newSocket.id ?? null);
+    });
+
+    newSocket.on('disconnect', () => {
+      setIsConnected(false);
+      setSocketId(null);
+    });
+
+    newSocket.on('connect_error', () => {
+      setIsConnected(false);
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
       setSocket(null);
       setIsConnected(false);
       setSocketId(null);
-    }
-
-    if (!socket) {
-      
-      const newSocket = io(SOCKET_URL, {
-        auth: { token: accessToken },
-        autoConnect: true,
-      });
-
-      tokenRef.current = accessToken;
-
-      newSocket.on('connect', () => {
-        setIsConnected(true);
-        setSocketId(newSocket.id ?? null);
-      });
-
-      newSocket.on('disconnect', () => {
-        setIsConnected(false);
-        setSocketId(null);
-      });
-
-      newSocket.on('connect_error', () => {
-        setIsConnected(false);
-      });
-
-      setSocket(newSocket);
-    }
-
-  }, [user, socket]);
+    };
+  }, [user, accessToken]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected, socketId }}>

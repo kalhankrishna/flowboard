@@ -21,7 +21,7 @@ export default function BoardCard({ board, onEditBoard, isAddingBoard, onDeleteI
 
   const getUserRole = (): BoardRole | null => {
     if (!user || !collaborators) return null;
-    const access = collaborators.find(c => c.userId === user.id);
+    const access = collaborators.find(c => c.userId === user.userId);
     return access?.role || null;
   };
 

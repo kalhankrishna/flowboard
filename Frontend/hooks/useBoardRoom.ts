@@ -21,25 +21,28 @@ export const useBoardRoom = (boardId: string | null) => {
   const [roomError, setRoomError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!socket || !isConnected || !boardId) {
-      return;
-    }
+    if (!socket || !isConnected || !boardId) return;
+    
+    let cancelled = false;
 
     socket.emit('BOARD_JOIN', boardId, (response: RoomJoinResponse) => {
-        if (response.success) {
-            setIsInRoom(true);
-            setRoomError(null);
-        } else {
-            setIsInRoom(false);
-            setRoomError(response.error);
-        }
+      if(cancelled) return;
+
+      if (response.success) {
+          setIsInRoom(true);
+          setRoomError(null);
+      } else {
+          setIsInRoom(false);
+          setRoomError(response.error);
+      }
     });
 
     return () => {
-        if (socket.connected) {
-            socket.emit('BOARD_LEAVE', boardId);
-        }
-        setIsInRoom(false);
+      cancelled = true;
+      if (socket.connected) {
+          socket.emit('BOARD_LEAVE', boardId);
+      }
+      setIsInRoom(false);
     };
   }, [socket, isConnected, boardId]);
 

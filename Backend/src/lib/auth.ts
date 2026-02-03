@@ -1,5 +1,11 @@
 import bcrypt from 'bcrypt';
-import jwt, {Secret, SignOptions} from 'jsonwebtoken';
+import jwt, {JwtPayload, Secret, SignOptions} from 'jsonwebtoken';
+
+type User = {
+  userId: string;
+  email: string;
+  name: string;
+}
 
 const SALT_ROUNDS = 10;
 const JWT_SECRET : Secret = process.env.JWT_SECRET!;
@@ -22,17 +28,17 @@ export async function comparePassword(
 }
 
 //Generate JWT token
-export function generateAccessToken(userId: string): string {
-  return jwt.sign({ userId }, JWT_SECRET, jwtOptions);
+export function generateAccessToken(user: User): string {
+  return jwt.sign(user , JWT_SECRET, jwtOptions);
 }
 
 //Generate JWT refresh token
-export function generateRefreshToken(userId: string): string {
-  return jwt.sign({ userId }, JWT_SECRET, rtOptions);
+export function generateRefreshToken(user: User): string {
+  return jwt.sign(user, JWT_SECRET, rtOptions);
 }
 
 //Verify JWT token
-export function verifyToken(token: string): { userId: string } {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-    return decoded;
+export function verifyToken(token: string): JwtPayload {
+  const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+  return decoded;
 }

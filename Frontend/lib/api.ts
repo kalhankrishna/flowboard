@@ -21,12 +21,16 @@ async function refreshAccessToken(): Promise<string> {
         credentials: 'include',
       });
 
-      if (!response.ok) {
-        throw new Error('Refresh failed');
-      }
+      if (!response.ok) throw new Error('Refresh failed');
 
       const { accessToken } = await response.json();
-      localStorage.setItem('accessToken', accessToken);
+      if(typeof window !== 'undefined'){
+        localStorage.setItem('accessToken', accessToken);
+        window.dispatchEvent(new CustomEvent('auth:token-refreshed', { 
+          detail: { accessToken } 
+        }));
+      }
+      
       return accessToken;
     } finally {
       isRefreshing = false;
@@ -39,58 +43,42 @@ async function refreshAccessToken(): Promise<string> {
 
 // Global fetch wrapper with auth + refresh
 async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  const token = localStorage.getItem('accessToken');
-
-  const response = await fetch(url, {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  
+  let response = await fetch(url, {
     ...options,
     headers: {
       ...options.headers,
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     },
-    credentials: url.includes('/auth/refresh') || url.includes('/auth/logout') ? 'include' : undefined,
   });
 
   // Handle 401
   if (response.status === 401) {
     const errorData = await response.json();
-
-    // Try refresh for missing OR expired token
-    if (errorData.code === 'TOKEN_EXPIRED' || errorData.code === 'NO_TOKEN') {
+    if(errorData.code === 'TOKEN_EXPIRED' || errorData.code === 'NO_TOKEN') {
       try {
         const newToken = await refreshAccessToken();
 
-        // Retry original request with new token
-        return fetch(url, {
+        response = await fetch(url, {
           ...options,
           headers: {
             ...options.headers,
             'Authorization': `Bearer ${newToken}`,
           },
         });
-      } catch (refreshError) {
-        // Refresh failed → logout
-        localStorage.removeItem('accessToken');
-        
+
+        return response;
+      } catch {
         if (typeof window !== 'undefined') {
-          const { useAuthStore } = await import('@/store/authStore');
-          useAuthStore.getState().clearUser();
-          window.location.href = '/login';
+          window.dispatchEvent(new CustomEvent('auth:session-expired'));
         }
-        
         throw new Error('Session expired');
       }
     }
 
-    // Other 401s (INVALID_CREDENTIALS, REFRESH_TOKEN_EXPIRED, etc.) → logout
-    localStorage.removeItem('accessToken');
-    
     if (typeof window !== 'undefined') {
-      const currentPath = window.location.pathname;
-      if (currentPath !== '/login' && currentPath !== '/register') {
-        const { useAuthStore } = await import('@/store/authStore');
-        useAuthStore.getState().clearUser();
-        window.location.href = '/login';
-      }
+      window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     }
   }
 
@@ -139,9 +127,6 @@ export async function logout(): Promise<void> {
   if (!response.ok) {
     throw new Error('Logout failed');
   }
-
-  // Clear access token
-  localStorage.removeItem('accessToken');
   
   return;
 }

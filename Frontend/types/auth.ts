@@ -1,5 +1,5 @@
 export interface User {
-  id: string;
+  userId: string;
   email: string;
   name: string;
 }
@@ -19,9 +19,11 @@ export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isInitialized: boolean;
+  accessToken: string | null;
 
   setUser: (user: User | null) => void;
   clearUser: () => void;
-  login: (user: User) => void;
-  logout: () => void;
+
+  setToken: (accessToken: string | null) => void;
+  clearToken: () => void;
 }

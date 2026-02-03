@@ -71,7 +71,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
 
   const getUserRole = (): BoardRole | null => {
     if (!user || !collaborators) return null;
-    const access = collaborators.find(c => c.userId === user.id);
+    const access = collaborators.find(c => c.userId === user.userId);
     return access?.role || null;
   };
 

@@ -8,6 +8,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       isInitialized: false,
+      accessToken: null,
 
       setUser: (user) => set({ 
         user, 
@@ -20,6 +21,10 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: false,
         isInitialized: true
       }),
+
+      setToken: (accessToken) => set({ accessToken }),
+
+      clearToken: () => set({ accessToken: null }),
     }),
     { name: 'AuthStore' }
   )

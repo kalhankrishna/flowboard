@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/authStore';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const setUser = useAuthStore((state) => state.setUser);
+  const {setUser, setToken} = useAuthStore();
   
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -49,6 +49,7 @@ export default function RegisterPage() {
       
       // Update Zustand store
       setUser(user);
+      setToken(accessToken);
       
       // Show success toast
       toast.success('Account created successfully!');

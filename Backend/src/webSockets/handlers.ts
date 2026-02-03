@@ -25,7 +25,7 @@ export function registerBoardHandlers(io: Server, socket: Socket) {
                 callback({ success: false, error: "Not authorized to join this board" });
                 return;
             }
-            await socket.join(boardId);
+            await socket.join(`board:${boardId}`);
             callback({ success: true, boardId, role });
         }
         catch(err){
@@ -36,7 +36,7 @@ export function registerBoardHandlers(io: Server, socket: Socket) {
 
     socket.on("BOARD_LEAVE", async (boardId: string) => {
         try {
-            await socket.leave(boardId);
+            await socket.leave(`board:${boardId}`);
         } catch (err) {
             console.error("Error in BOARD_LEAVE:", err);
         }

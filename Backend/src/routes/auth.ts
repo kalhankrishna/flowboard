@@ -29,8 +29,8 @@ router.post('/register', asyncHandler(async (req, res) => {
       },
     });
 
-    const accessToken = generateAccessToken(user.id);
-    const refreshToken = generateRefreshToken(user.id);
+    const accessToken = generateAccessToken({userId: user.id, email: user.email, name: user.name});
+    const refreshToken = generateRefreshToken({userId: user.id, email: user.email, name: user.name});
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
@@ -42,7 +42,7 @@ router.post('/register', asyncHandler(async (req, res) => {
     res.status(201).json({
       accessToken,
       user: {
-        id: user.id,
+        userId: user.id,
         email: user.email,
         name: user.name,
       }
@@ -69,8 +69,8 @@ router.post('/login', asyncHandler(async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password', code: 'INVALID_CREDENTIALS' });
     }
 
-    const accessToken = generateAccessToken(user.id);
-    const refreshToken = generateRefreshToken(user.id);
+    const accessToken = generateAccessToken({userId: user.id, email: user.email, name: user.name});
+    const refreshToken = generateRefreshToken({userId: user.id, email: user.email, name: user.name});
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
@@ -82,7 +82,7 @@ router.post('/login', asyncHandler(async (req, res) => {
     res.json({
       accessToken,
       user: {
-        id: user.id,
+        userId: user.id,
         email: user.email,
         name: user.name,
       }
@@ -101,8 +101,8 @@ router.post('/refresh', (req, res) => {
   try {
     const decoded = verifyToken(refreshToken);
 
-    const newAccessToken = generateAccessToken(decoded.userId);
-    const newRefreshToken = generateRefreshToken(decoded.userId);
+    const newAccessToken = generateAccessToken({userId: decoded.userId, email: decoded.email, name: decoded.name});
+    const newRefreshToken = generateRefreshToken({userId: decoded.userId, email: decoded.email, name: decoded.name});
 
     res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,

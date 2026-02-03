@@ -3,15 +3,15 @@ import { jwtDecode } from 'jwt-decode';
 import { useAuthStore } from '@/store/authStore';
 
 export function useAuthHydration() {
-  const setUser = useAuthStore(state => state.setUser);
-  const clearUser = useAuthStore(state => state.clearUser);
+  const { setUser, clearUser, setToken, clearToken } = useAuthStore();
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
 
     if (!token) {
-        clearUser();
-        return;
+      clearUser();
+      clearToken();
+      return;
     }
 
     try {
@@ -19,14 +19,18 @@ export function useAuthHydration() {
 
       if (decoded.exp * 1000 < Date.now()) {
         localStorage.removeItem('accessToken');
+        clearUser();
+        clearToken();
         return;
       }
 
-      setUser({id: decoded.userId, email: decoded.email, name: decoded.name});
+      setUser({userId: decoded.userId, email: decoded.email, name: decoded.name});
+      setToken(token);
     } catch (error) {
       console.error('Invalid token:', error);
       localStorage.removeItem('accessToken');
       clearUser();
+      clearToken();
     }
-  }, [setUser, clearUser]);
+  }, []);
 }

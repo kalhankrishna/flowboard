@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/authStore';
 
 export default function LoginPage() {
   const router = useRouter();
-  const setUser = useAuthStore((state) => state.setUser);
+  const {setUser, setToken} = useAuthStore();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,6 +37,8 @@ export default function LoginPage() {
       
       // Update Zustand store
       setUser(user);
+      setToken(accessToken);
+      
       
       // Show success toast
       toast.success('Login successful!');
