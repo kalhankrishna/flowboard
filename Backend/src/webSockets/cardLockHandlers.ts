@@ -13,10 +13,11 @@ type ErrorResponse = {
 
 type CardLockResponse = SuccessResponse | ErrorResponse;
 
-const cardLocks = new Map<string, {boardId: string, cardId: string}>();
+export const cardLocks = new Map<string, {boardId: string, cardId: string}>();
 
 export function registerCardLockHandlers(io: Server, socket: Socket) {
     const userId = socket.data.userId as string;
+    const userName = socket.data.userName as string || 'Anonymous';
 
     socket.on("CARD_LOCK", async ({boardId, cardId}: {boardId: string, cardId: string}, callback: (response: CardLockResponse) => void) => {
         try {
@@ -28,7 +29,7 @@ export function registerCardLockHandlers(io: Server, socket: Socket) {
 
             cardLocks.set(socket.id, {boardId: boardId, cardId: cardId});
 
-            socket.to(`board:${boardId}`).emit("CARD_LOCKED", { cardId, userId });
+            socket.to(`board:${boardId}`).emit("CARD_LOCKED", { cardId, userName });
 
             callback({ success: true, cardId });
 
@@ -43,7 +44,7 @@ export function registerCardLockHandlers(io: Server, socket: Socket) {
             const lock = cardLocks.get(socket.id);
             if(lock){
                 cardLocks.delete(socket.id);
-                socket.to(`board:${boardId}`).emit("CARD_UNLOCKED", { cardId, userId });
+                socket.to(`board:${boardId}`).emit("CARD_UNLOCKED", { cardId });
             }
             callback({ success: true, cardId });
         } catch (err) {
@@ -55,7 +56,7 @@ export function registerCardLockHandlers(io: Server, socket: Socket) {
     socket.on("disconnect", () => {
         const lock = cardLocks.get(socket.id);
         if(lock){
-            socket.to(`board:${lock.boardId}`).emit("CARD_UNLOCKED", { cardId: lock.cardId, userId });
+            socket.to(`board:${lock.boardId}`).emit("CARD_UNLOCKED", { cardId: lock.cardId });
             cardLocks.delete(socket.id);
         }
     });

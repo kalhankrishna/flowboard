@@ -1,6 +1,7 @@
 import { Server, Socket } from "socket.io";
 import { getRoleByBoardId } from "../lib/permission.helper";
 import { BoardRole } from "@prisma/client";
+import { cardLocks } from "./cardLockHandlers";
 
 type SuccessResponse = {
   success: true;
@@ -51,6 +52,17 @@ export function registerBoardHandlers(io: Server, socket: Socket) {
             boardsSet.add(boardId);
 
             io.to(`board:${boardId}`).emit("USER_JOINED", presenceMap ? Array.from(presenceMap, ([socketId, user]) => ({...user, socketId})) : []);
+
+            const currentLocks: Array<{cardId: string, userName: string}> = [];
+            cardLocks.forEach((lock, socketId) => {
+                if (lock.boardId === boardId) {
+                    const lockedBySocket = io.sockets.sockets.get(socketId);
+                    const userName = lockedBySocket?.data.userName || 'Anonymous';
+                    currentLocks.push({ cardId: lock.cardId, userName });
+                }
+            });
+            
+            socket.emit("BOARD_LOCKS_INIT", currentLocks);
 
             callback({ success: true, boardId, role });
         }
