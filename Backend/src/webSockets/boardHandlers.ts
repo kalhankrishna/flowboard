@@ -16,6 +16,7 @@ type ErrorResponse = {
 type RoomJoinResponse = SuccessResponse | ErrorResponse;
 
 const roomPresence = new Map<string, Map<string, { userId: string; userName: string }>>();
+const socketBoards = new Map<string, Set<string>>();
 
 export function registerBoardHandlers(io: Server, socket: Socket) {
     const userId = socket.data.userId as string;
@@ -35,10 +36,19 @@ export function registerBoardHandlers(io: Server, socket: Socket) {
                 roomPresence.set(boardId, new Map());
             }
 
-            let presenceMap = roomPresence.get(boardId);
-            if(presenceMap && !presenceMap.has(socket.id)){
+            const presenceMap = roomPresence.get(boardId);
+            if(presenceMap){
                 presenceMap.set(socket.id, { userId, userName });
             }
+            
+            let boardsSet = socketBoards.get(socket.id);
+
+            if(!boardsSet){
+                boardsSet = new Set();
+                socketBoards.set(socket.id, boardsSet);
+            }
+
+            boardsSet.add(boardId);
 
             io.to(`board:${boardId}`).emit("USER_JOINED", presenceMap ? Array.from(presenceMap, ([socketId, user]) => ({...user, socketId})) : []);
 
@@ -52,11 +62,25 @@ export function registerBoardHandlers(io: Server, socket: Socket) {
 
     socket.on("BOARD_LEAVE", async (boardId: string) => {
         try {
-            let presenceMap = roomPresence.get(boardId);
+            const presenceMap = roomPresence.get(boardId);
             if(presenceMap){
                 presenceMap.delete(socket.id);
-                io.to(`board:${boardId}`).emit("USER_LEFT", presenceMap ? Array.from(presenceMap, ([socketId, user]) => ({...user, socketId})) : []);
+                if(presenceMap.size === 0){
+                    roomPresence.delete(boardId);
+                }
+                else{
+                    io.to(`board:${boardId}`).emit("USER_LEFT", presenceMap ? Array.from(presenceMap, ([socketId, user]) => ({...user, socketId})) : []);
+                }
             }
+
+            const boardsSet = socketBoards.get(socket.id);
+            if(boardsSet){
+                boardsSet.delete(boardId);
+                if(boardsSet.size === 0){
+                    socketBoards.delete(socket.id);
+                }
+            }
+
             await socket.leave(`board:${boardId}`);
         } catch (err) {
             console.error("Error in BOARD_LEAVE:", err);
@@ -64,9 +88,23 @@ export function registerBoardHandlers(io: Server, socket: Socket) {
     });
 
     socket.on("disconnect", () => {
-        roomPresence.forEach((presenceMap, boardId) => {
-            presenceMap.delete(socket.id);
-            io.to(`board:${boardId}`).emit("USER_LEFT", presenceMap ? Array.from(presenceMap, ([socketId, user]) => ({...user, socketId})) : []);
+        const userBoards = socketBoards.get(socket.id);  
+
+        if(!userBoards || userBoards.size === 0) return;
+
+        userBoards.forEach(boardId => {
+            const presenceMap = roomPresence.get(boardId);
+            if(presenceMap){
+                presenceMap.delete(socket.id);
+                if(presenceMap.size === 0){
+                    roomPresence.delete(boardId);
+                }
+                else{
+                    io.to(`board:${boardId}`).emit("USER_LEFT", presenceMap ? Array.from(presenceMap, ([socketId, user]) => ({...user, socketId})) : []);
+                }
+            }
         });
+
+        socketBoards.delete(socket.id);
     });
 }

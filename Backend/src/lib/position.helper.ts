@@ -13,13 +13,16 @@ export function getNewPos(firstPos:Prisma.Decimal | undefined, secondPos: Prisma
     const newPos = positions[`${firstPos !== undefined}-${secondPos !== undefined}`];
     switch(newPos){
         case 'Between resources':
-            return new Prisma.Decimal((firstPos!.plus(secondPos!)).div(2));
+        return new Prisma.Decimal((firstPos!.plus(secondPos!)).div(2));
+
         case 'Last position':
-            return new Prisma.Decimal(firstPos!.plus(1));
+        return new Prisma.Decimal(firstPos!.plus(1));
+
         case 'First position':
-            return new Prisma.Decimal(secondPos!.div(2));
+        return new Prisma.Decimal(secondPos!.div(2));
+
         case 'No resources':
-            return new Prisma.Decimal(1.0);
+        return new Prisma.Decimal(1.0);
     }
 }
 
@@ -29,6 +32,7 @@ export function needsRebalancing(resources: Resources): boolean{
             return true;
         }
     }
+
     return false;
 }
 
@@ -37,5 +41,6 @@ export function rebalance(resources: Resources): Resources{
         id: resource.id,
         position: new Prisma.Decimal((index + 1) * 1.0),
     }));
+    
     return rebalancedResources;
 }

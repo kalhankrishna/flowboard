@@ -11,7 +11,8 @@ import { validateEnv } from './config/env.js';
 import { authSocketMiddleware } from './webSockets/auth.middleware.js';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import { registerBoardHandlers } from './webSockets/handlers.js';
+import { registerBoardHandlers } from './webSockets/boardHandlers.js';
+import { registerCardLockHandlers } from './webSockets/cardLockHandlers.js';
 
 dotenv.config();
 validateEnv();
@@ -33,6 +34,7 @@ io.use(authSocketMiddleware);
 
 io.on('connection', (socket) => {
   registerBoardHandlers(io, socket);
+  registerCardLockHandlers(io, socket);
 });
 
 app.locals.io = io;
