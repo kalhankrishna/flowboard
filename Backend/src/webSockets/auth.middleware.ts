@@ -10,6 +10,8 @@ export function authSocketMiddleware(socket: Socket, next: (err?: Error) => void
     try{
         const payload = verifyToken(token);
         socket.data.userId = payload.userId;
+        socket.data.email = payload.email;
+        socket.data.userName = payload.name;
         next();
     }
     catch (err) {

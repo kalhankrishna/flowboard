@@ -4,4 +4,5 @@ export { useColumns } from './useColumns';
 export { useSharing } from './useSharing';
 export { useAuthHydration } from './useAuthHydration';
 export { useAuthSync } from './useAuthSync';
-export * from './useBoardRoom';
+export { useBoardRoom } from './useBoardRoom';
+export { usePresence } from './usePresence';

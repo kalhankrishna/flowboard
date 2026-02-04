@@ -9,6 +9,7 @@ import CardContent from "@/components/CardContent";
 import ColumnContent from "@/components/ColumnContent";
 import CardModal from "@/components/CardModal";
 import ColumnModal from "@/components/ColumnModal";
+import { PresenceIndicator } from "@/components/PresenceIndicator";
 import { useBoard, useCards, useColumns, useSharing, useBoardRoom } from "@/hooks";
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
@@ -374,6 +375,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
               <button onClick={openAddColumnModal} disabled={isPendingAnyMutation} className="mb-4 bg-green-500 text-white p-2 rounded w-full max-w-40">Add Column</button>
             )
           }
+          <PresenceIndicator boardId={boardId} />
         </div>
         <div className="flex gap-4 justify-between">
           <SortableContext items={board.columns.map(column => column.id)} strategy={horizontalListSortingStrategy}>

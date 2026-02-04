@@ -27,7 +27,7 @@ export const useBoardRoom = (boardId: string | null) => {
 
     socket.emit('BOARD_JOIN', boardId, (response: RoomJoinResponse) => {
       if(cancelled) return;
-
+      console.log('Emitted Board Join');
       if (response.success) {
           setIsInRoom(true);
           setRoomError(null);
@@ -41,6 +41,7 @@ export const useBoardRoom = (boardId: string | null) => {
       cancelled = true;
       if (socket.connected) {
           socket.emit('BOARD_LEAVE', boardId);
+          console.log('Emitted Board Leave');
       }
       setIsInRoom(false);
     };
