@@ -8,3 +8,5 @@ export { useBoardRoom } from './useBoardRoom';
 export { usePresence } from './usePresence';
 export { useLock } from './useLocks';
 export { useLockListeners } from './useLockListeners';
+export { useUpdateListeners } from './useUpdateListeners';
+export { useUpdateBroadcasts } from './useUpdateBroadcasts';

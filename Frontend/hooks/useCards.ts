@@ -2,10 +2,14 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { addCard, updateCard, deleteCard, reorderCard } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
 import { Card, ReorderCard } from '@/types/board';
+import { useUpdateBroadcasts } from './useUpdateBroadcasts';
 import toast from 'react-hot-toast';
+import { add } from '@dnd-kit/utilities';
 
 export function useCards(boardId: string) {
   const queryClient = useQueryClient();
+
+  const { addCardBroadcast, updateCardBroadcast, deleteCardBroadcast, reorderCardsBroadcast } = useUpdateBroadcasts();
   
   //ADD CARD
   const addCardMutation = useMutation({
@@ -26,6 +30,7 @@ export function useCards(boardId: string) {
         };
       });
       toast.success('Card added successfully');
+      addCardBroadcast({ boardId, card: newCard });
     },
     
     onError: (error) => {
@@ -55,6 +60,7 @@ export function useCards(boardId: string) {
         };
       });
       toast.success('Card updated successfully');
+      updateCardBroadcast({ boardId, card: updatedCard });
     },
     
     onError: (error) => {
@@ -88,8 +94,9 @@ export function useCards(boardId: string) {
       return { previous };
     },
 
-    onSuccess: () => {
+    onSuccess: (_, cardId) => {
       toast.success('Card deleted successfully');
+      deleteCardBroadcast({ boardId, cardId });
     },
     
     onError: (error, variables, context) => {
@@ -105,6 +112,10 @@ export function useCards(boardId: string) {
   const reorderCardsMutation = useMutation({
     mutationFn: (data: ReorderCard) => reorderCard(data),
     
+    onSuccess: (_, data) => {
+      reorderCardsBroadcast({ boardId, reorderData: data });
+    },
+
     onError: (error) => {
       console.error('Failed to reorder cards:', error);
       toast.error('Failed to reorder cards');

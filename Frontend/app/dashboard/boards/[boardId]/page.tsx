@@ -10,11 +10,11 @@ import ColumnContent from "@/components/ColumnContent";
 import CardModal from "@/components/CardModal";
 import ColumnModal from "@/components/ColumnModal";
 import { PresenceIndicator } from "@/components/PresenceIndicator";
-import { useBoard, useCards, useColumns, useSharing, useBoardRoom, useLock, useLockListeners } from "@/hooks";
+import { useBoard, useCards, useColumns, useSharing, useBoardRoom, useLock, useLockListeners, useUpdateListeners } from "@/hooks";
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import * as React from 'react'
-import { Column, ReorderCard, ReorderColumn } from "@/types/board";
+import { ReorderCard, ReorderColumn } from "@/types/board";
 import ShareModal from '@/components/ShareModal';
 import { useAuthStore } from '@/store/authStore';
 import { BoardRole } from '@/types/share';
@@ -27,6 +27,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
   const { isInRoom, roomError } = useBoardRoom(boardId);
   const { lockResource, unlockResource } = useLock();
   const lockedResources = useLockListeners(boardId);
+  useUpdateListeners(boardId);
 
   const id = useId();
   const queryClient = useQueryClient();
@@ -60,10 +61,10 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     columnId: null
   });
 
-  const dragOriginRef = useRef<{
-    container: Column;
-    itemIndex: number;
-  } | null>(null);
+  // const dragOriginRef = useRef<{
+  //   container: Column;
+  //   itemIndex: number;
+  // } | null>(null);
 
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
@@ -124,7 +125,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     }
     if (type === 'card') {
       return board.columns.find((container) =>
-        container.cards.find((card) => card.id === id),
+        container.cards.find((card) => card.id === id)
       );
     }
   }
@@ -211,13 +212,13 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     setActiveId(active.id);
     lockResource({ boardId, resourceId: active.id.toString() });
 
-    const activeContainer = findContainer(active.id.toString(), 'card');
-    if (activeContainer) {
-      dragOriginRef.current = {
-        container: activeContainer,
-        itemIndex: activeContainer.cards.findIndex(i => i.id === active.id),
-      };
-    }
+    // const activeContainer = findContainer(active.id.toString(), 'card');
+    // if (activeContainer) {
+    //   dragOriginRef.current = {
+    //     container: activeContainer,
+    //     itemIndex: activeContainer.cards.findIndex(i => i.id === active.id),
+    //   };
+    // }
   }
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -281,7 +282,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     
     if (!over) {
       setActiveId(null);
-      dragOriginRef.current = null;
+      //dragOriginRef.current = null;
       return;
     }
 
@@ -294,7 +295,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
 
       if (!activeColumn || !overColumn) {
         setActiveId(null);
-        dragOriginRef.current = null;
+        //dragOriginRef.current = null;
         unlockResource({ boardId, resourceId: active.id.toString() });
         return;
       }
@@ -322,37 +323,38 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
         reorderColumnsMutation.mutate(reorderedColumnData);
         
         setActiveId(null);
-        dragOriginRef.current = null;
+        //dragOriginRef.current = null;
         unlockResource({ boardId, resourceId: active.id.toString() });
         return;
       }
     }
 
     //SCENARIO 2: Dragging a CARD
-    if(!dragOriginRef.current){
-      setActiveId(null);
-      dragOriginRef.current = null;
-      unlockResource({ boardId, resourceId: active.id.toString() });
-      return;
-    }
+
+    // if(!dragOriginRef.current){
+    //   setActiveId(null);
+    //   dragOriginRef.current = null;
+    //   unlockResource({ boardId, resourceId: active.id.toString() });
+    //   return;
+    // }
 
     const activeColumn = findContainer(active.id.toString(), 'card');
     if(!activeColumn){
       setActiveId(null);
-      dragOriginRef.current = null;
+      //dragOriginRef.current = null;
       unlockResource({ boardId, resourceId: active.id.toString() });
       return;
     }
     const activeCardIndex = activeColumn.cards.findIndex(i => i.id === active.id);
 
-    const isSamePosition = (dragOriginRef.current.container.id === activeColumn.id) && (dragOriginRef.current.itemIndex === activeCardIndex);
+    // const isSamePosition = (dragOriginRef.current.container.id === activeColumn.id) && (dragOriginRef.current.itemIndex === activeCardIndex);
 
-    if(isSamePosition){
-      setActiveId(null);
-      dragOriginRef.current = null;
-      unlockResource({ boardId, resourceId: active.id.toString() });
-      return;
-    }
+    // if(isSamePosition){
+    //   setActiveId(null);
+    //   dragOriginRef.current = null;
+    //   unlockResource({ boardId, resourceId: active.id.toString() });
+    //   return;
+    // }
 
     const reorderedCardData: ReorderCard = {
       cardId: active.id.toString(),
@@ -364,14 +366,14 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     reorderCardsMutation.mutate(reorderedCardData);
 
     setActiveId(null);
-    dragOriginRef.current = null;
+    //dragOriginRef.current = null;
     unlockResource({ boardId, resourceId: active.id.toString() });
   };
 
   const handleDragCancel = (event: DragCancelEvent) => {
     const {active} = event;
     setActiveId(null);
-    dragOriginRef.current = null;
+    //dragOriginRef.current = null;
     unlockResource({ boardId, resourceId: active.id.toString() });
     queryClient.invalidateQueries({queryKey: queryKeys.board(boardId), refetchType: 'active', exact: true});
   };

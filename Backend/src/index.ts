@@ -13,6 +13,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { registerBoardHandlers } from './webSockets/boardHandlers.js';
 import { registerLockHandlers } from './webSockets/lockHandlers.js';
+import { registerUpdateHandlers } from './webSockets/updateHandlers.js';
 
 dotenv.config();
 validateEnv();
@@ -35,6 +36,7 @@ io.use(authSocketMiddleware);
 io.on('connection', (socket) => {
   registerBoardHandlers(io, socket);
   registerLockHandlers(io, socket);
+  registerUpdateHandlers(io, socket);
 });
 
 app.locals.io = io;
