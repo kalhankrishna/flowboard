@@ -10,7 +10,7 @@ import ColumnContent from "@/components/ColumnContent";
 import CardModal from "@/components/CardModal";
 import ColumnModal from "@/components/ColumnModal";
 import { PresenceIndicator } from "@/components/PresenceIndicator";
-import { useBoard, useCards, useColumns, useSharing, useBoardRoom, useCardLock, useLockListeners } from "@/hooks";
+import { useBoard, useCards, useColumns, useSharing, useBoardRoom, useLock, useLockListeners } from "@/hooks";
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import * as React from 'react'
@@ -25,8 +25,8 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
   const { boardId } = React.use(params);
 
   const { isInRoom, roomError } = useBoardRoom(boardId);
-  const { lockCard, unlockCard } = useCardLock();
-  const lockedCards = useLockListeners(boardId);
+  const { lockResource, unlockResource } = useLock();
+  const lockedResources = useLockListeners(boardId);
 
   const id = useId();
   const queryClient = useQueryClient();
@@ -142,6 +142,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
       columnId: container?.id || null, 
       cardId 
     });
+    lockResource({boardId, resourceId: cardId});
   }
 
   function closeCardModal() {
@@ -155,13 +156,16 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
 
   function handleEditCard(cardId: string, title: string, description: string | null, position: string) {
     updateCardMutation.mutate({ id: cardId, title,  description, position });
+    unlockResource({boardId, resourceId: cardId});
     closeCardModal();
   }
 
   function handleDeleteCard(cardId: string) {
+    lockResource({boardId, resourceId: cardId});
     if (window.confirm('Are you sure you want to delete this card?')) {
       deleteCardMutation.mutate(cardId);
     }
+    unlockResource({boardId, resourceId: cardId});
   }
 
   function openAddColumnModal() {
@@ -174,6 +178,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
       mode: 'edit', 
       columnId: columnId, 
     });
+    lockResource({boardId, resourceId: columnId});
   }
 
   function closeColumnModal() {
@@ -187,13 +192,16 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
 
   function handleEditColumn(columnId: string, title: string, position: string) {
     updateColumnMutation.mutate({ id: columnId, title, position });
+    unlockResource({boardId, resourceId: columnId});
     closeColumnModal();
   }
 
   function handleDeleteColumn(columnId: string) {
+    lockResource({boardId, resourceId: columnId});
     if (window.confirm('Are you sure you want to delete this column?')) {
       deleteColumnMutation.mutate(columnId);
     }
+    unlockResource({boardId, resourceId: columnId});
   }
 
   //Drag Handlers
@@ -201,7 +209,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     const {active} = event;
     
     setActiveId(active.id);
-    lockCard({ boardId, cardId: active.id.toString() });
+    lockResource({ boardId, resourceId: active.id.toString() });
 
     const activeContainer = findContainer(active.id.toString(), 'card');
     if (activeContainer) {
@@ -287,7 +295,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
       if (!activeColumn || !overColumn) {
         setActiveId(null);
         dragOriginRef.current = null;
-        unlockCard({ boardId, cardId: active.id.toString() });
+        unlockResource({ boardId, resourceId: active.id.toString() });
         return;
       }
 
@@ -315,7 +323,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
         
         setActiveId(null);
         dragOriginRef.current = null;
-        unlockCard({ boardId, cardId: active.id.toString() });
+        unlockResource({ boardId, resourceId: active.id.toString() });
         return;
       }
     }
@@ -324,7 +332,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     if(!dragOriginRef.current){
       setActiveId(null);
       dragOriginRef.current = null;
-      unlockCard({ boardId, cardId: active.id.toString() });
+      unlockResource({ boardId, resourceId: active.id.toString() });
       return;
     }
 
@@ -332,7 +340,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     if(!activeColumn){
       setActiveId(null);
       dragOriginRef.current = null;
-      unlockCard({ boardId, cardId: active.id.toString() });
+      unlockResource({ boardId, resourceId: active.id.toString() });
       return;
     }
     const activeCardIndex = activeColumn.cards.findIndex(i => i.id === active.id);
@@ -342,7 +350,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     if(isSamePosition){
       setActiveId(null);
       dragOriginRef.current = null;
-      unlockCard({ boardId, cardId: active.id.toString() });
+      unlockResource({ boardId, resourceId: active.id.toString() });
       return;
     }
 
@@ -357,14 +365,14 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
 
     setActiveId(null);
     dragOriginRef.current = null;
-    unlockCard({ boardId, cardId: active.id.toString() });
+    unlockResource({ boardId, resourceId: active.id.toString() });
   };
 
   const handleDragCancel = (event: DragCancelEvent) => {
     const {active} = event;
     setActiveId(null);
     dragOriginRef.current = null;
-    unlockCard({ boardId, cardId: active.id.toString() });
+    unlockResource({ boardId, resourceId: active.id.toString() });
     queryClient.invalidateQueries({queryKey: queryKeys.board(boardId), refetchType: 'active', exact: true});
   };
 
@@ -392,15 +400,15 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
           <SortableContext items={board.columns.map(column => column.id)} strategy={horizontalListSortingStrategy}>
             {
               board.columns.map(column => (
-                <DroppableColumn key={column.id} canEdit={canEdit} column={column} onAddCard={openAddCardModal} onEdit={openEditColumnModal} onDelete={handleDeleteColumn} isPending={isPendingAnyMutation}>
+                <DroppableColumn key={column.id} canEdit={canEdit} column={column} isLocked={lockedResources.has(column.id)} lockedBy={lockedResources.get(column.id)} onAddCard={openAddCardModal} onEdit={openEditColumnModal} onDelete={handleDeleteColumn} isPending={isPendingAnyMutation}>
                   <SortableContext items={column.cards.map(card => card.id)} strategy={verticalListSortingStrategy}>
                     {column.cards.map(card => (
                       <SortableCard 
                         key={card.id}
                         canEdit={canEdit} 
                         card={card}
-                        isLocked={lockedCards.has(card.id)}
-                        lockedBy={lockedCards.get(card.id)} 
+                        isLocked={lockedResources.has(card.id)}
+                        lockedBy={lockedResources.get(card.id)} 
                         onEdit={openEditCardModal}
                         onDelete={handleDeleteCard}
                         isPending={isPendingAnyMutation}

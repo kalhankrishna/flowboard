@@ -52,7 +52,7 @@ export default function SortableCard({
     >
       <CardContent card={card} />
       {isLocked && lockedBy && (
-        <div className='absolute top-2 left-2 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-black text-sm font-medium'>
+        <div className='absolute top-2 left-2 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center bg-black text-white text-sm font-medium'>
           {lockedBy.charAt(0).toUpperCase()}
         </div>
       )}

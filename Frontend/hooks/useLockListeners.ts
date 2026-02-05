@@ -1,47 +1,49 @@
 import { useEffect, useState } from 'react';
 import { useSocket } from '@/components/SocketProvider';
 
-type LockedCard = {
-    cardId: string;
+type LockedResource = {
+    resourceId: string;
     userName: string;
 }
 
 export const useLockListeners = (boardId: string | null) => {
     const { socket, isConnected } = useSocket();
-    const [lockedCards, setLockedCards] = useState(new Map<string, string>());
+    const [lockedResources, setLockedResources] = useState(new Map<string, string>());
 
     useEffect(() => {
         if (!socket || !isConnected || !boardId) return;
 
-        const handleCardLock = ( { cardId, userName }: LockedCard) => {
-          setLockedCards(prev => new Map(prev).set(cardId, userName));
+        const handleResourceLock = ( { resourceId, userName }: LockedResource) => {
+          setLockedResources(prev => new Map(prev).set(resourceId, userName));
+          console.log(lockedResources);
         }
 
-        const handleCardUnlock = ( { cardId }: { cardId: string }) => {
-            setLockedCards(prev => {
+        const handleResourceUnlock = ( { resourceId }: { resourceId: string }) => {
+            setLockedResources(prev => {
                 const updated = new Map(prev);
-                updated.delete(cardId);
+                updated.delete(resourceId);
                 return updated;
             });
+            console.log(lockedResources);
         }
 
-        const handleInitLocks = (locks: LockedCard[]) => {
+        const handleInitLocks = (locks: LockedResource[]) => {
             const lockMap = new Map<string, string>();
-            locks.forEach(lock => lockMap.set(lock.cardId, lock.userName));
-            setLockedCards(lockMap);
+            locks.forEach(lock => lockMap.set(lock.resourceId, lock.userName));
+            setLockedResources(lockMap);
         }
 
-        socket.on('CARD_LOCKED', handleCardLock);
-        socket.on('CARD_UNLOCKED', handleCardUnlock);
+        socket.on('RESOURCE_LOCKED', handleResourceLock);
+        socket.on('RESOURCE_UNLOCKED', handleResourceUnlock);
         socket.on('BOARD_LOCKS_INIT', handleInitLocks);
 
         return () => {
-            setLockedCards(new Map<string, string>());
-            socket.off('CARD_LOCKED', handleCardLock);
-            socket.off('CARD_UNLOCKED', handleCardUnlock);
+            setLockedResources(new Map<string, string>());
+            socket.off('RESOURCE_LOCKED', handleResourceLock);
+            socket.off('RESOURCE_UNLOCKED', handleResourceUnlock);
             socket.off('BOARD_LOCKS_INIT', handleInitLocks);
         }
     }, [socket, isConnected, boardId]);
 
-    return lockedCards;
+    return lockedResources;
 };

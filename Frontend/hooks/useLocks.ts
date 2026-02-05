@@ -3,7 +3,7 @@ import { useSocket } from '@/components/SocketProvider';
 
 type SuccessResponse = {
     success: true;
-    cardId: string;
+    resourceId: string;
 };
 
 type ErrorResponse = {
@@ -15,31 +15,31 @@ type CardLockResponse = SuccessResponse | ErrorResponse;
 
 type CardInBoard = {
     boardId: string;
-    cardId: string;
+    resourceId: string;
 };
 
-export const useCardLock = () => {
+export const useLock = () => {
     const { socket } = useSocket();
 
-    const lockCard = useCallback(({boardId, cardId}: CardInBoard) => {
+    const lockResource = useCallback(({boardId, resourceId}: CardInBoard) => {
         if (!socket) return;
         
-        socket.emit('CARD_LOCK', {boardId, cardId}, (response: CardLockResponse) => {
+        socket.emit('RESOURCE_LOCK', {boardId, resourceId}, (response: CardLockResponse) => {
             if (!response.success) {
                 console.error(response.error);
             }
         });
     }, [socket]);
 
-    const unlockCard = useCallback(({boardId, cardId}: CardInBoard) => {
+    const unlockResource = useCallback(({boardId, resourceId}: CardInBoard) => {
         if (!socket) return;
         
-        socket.emit('CARD_UNLOCK', {boardId, cardId}, (response: CardLockResponse) => {
+        socket.emit('RESOURCE_UNLOCK', {boardId, resourceId}, (response: CardLockResponse) => {
             if (!response.success) {
                 console.error(response.error);
             }
         });
     }, [socket]);
 
-    return { lockCard, unlockCard };
+    return { lockResource, unlockResource };
 };
