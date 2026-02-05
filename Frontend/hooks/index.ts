@@ -6,3 +6,5 @@ export { useAuthHydration } from './useAuthHydration';
 export { useAuthSync } from './useAuthSync';
 export { useBoardRoom } from './useBoardRoom';
 export { usePresence } from './usePresence';
+export { useCardLock } from './useCardLock';
+export { useLockListeners } from './useLockListeners';

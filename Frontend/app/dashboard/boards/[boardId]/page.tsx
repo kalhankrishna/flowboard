@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useId, useRef} from "react";
-import { DndContext, DragEndEvent, DragOverEvent, DragOverlay, DragStartEvent, UniqueIdentifier, pointerWithin } from '@dnd-kit/core';
+import { DndContext, DragCancelEvent, DragEndEvent, DragOverEvent, DragOverlay, DragStartEvent, UniqueIdentifier, pointerWithin } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove, horizontalListSortingStrategy} from '@dnd-kit/sortable';
 import DroppableColumn from "@/components/DroppableColumn";
 import SortableCard from "@/components/SortableCard";
@@ -10,7 +10,7 @@ import ColumnContent from "@/components/ColumnContent";
 import CardModal from "@/components/CardModal";
 import ColumnModal from "@/components/ColumnModal";
 import { PresenceIndicator } from "@/components/PresenceIndicator";
-import { useBoard, useCards, useColumns, useSharing, useBoardRoom } from "@/hooks";
+import { useBoard, useCards, useColumns, useSharing, useBoardRoom, useCardLock, useLockListeners } from "@/hooks";
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import * as React from 'react'
@@ -25,6 +25,8 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
   const { boardId } = React.use(params);
 
   const { isInRoom, roomError } = useBoardRoom(boardId);
+  const { lockCard, unlockCard } = useCardLock();
+  const lockedCards = useLockListeners(boardId);
 
   const id = useId();
   const queryClient = useQueryClient();
@@ -199,6 +201,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     const {active} = event;
     
     setActiveId(active.id);
+    lockCard({ boardId, cardId: active.id.toString() });
 
     const activeContainer = findContainer(active.id.toString(), 'card');
     if (activeContainer) {
@@ -284,6 +287,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
       if (!activeColumn || !overColumn) {
         setActiveId(null);
         dragOriginRef.current = null;
+        unlockCard({ boardId, cardId: active.id.toString() });
         return;
       }
 
@@ -311,6 +315,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
         
         setActiveId(null);
         dragOriginRef.current = null;
+        unlockCard({ boardId, cardId: active.id.toString() });
         return;
       }
     }
@@ -319,6 +324,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     if(!dragOriginRef.current){
       setActiveId(null);
       dragOriginRef.current = null;
+      unlockCard({ boardId, cardId: active.id.toString() });
       return;
     }
 
@@ -326,6 +332,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     if(!activeColumn){
       setActiveId(null);
       dragOriginRef.current = null;
+      unlockCard({ boardId, cardId: active.id.toString() });
       return;
     }
     const activeCardIndex = activeColumn.cards.findIndex(i => i.id === active.id);
@@ -335,6 +342,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     if(isSamePosition){
       setActiveId(null);
       dragOriginRef.current = null;
+      unlockCard({ boardId, cardId: active.id.toString() });
       return;
     }
 
@@ -349,11 +357,14 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
 
     setActiveId(null);
     dragOriginRef.current = null;
+    unlockCard({ boardId, cardId: active.id.toString() });
   };
 
-  const handleDragCancel = () => {
+  const handleDragCancel = (event: DragCancelEvent) => {
+    const {active} = event;
     setActiveId(null);
     dragOriginRef.current = null;
+    unlockCard({ boardId, cardId: active.id.toString() });
     queryClient.invalidateQueries({queryKey: queryKeys.board(boardId), refetchType: 'active', exact: true});
   };
 
@@ -387,7 +398,9 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
                       <SortableCard 
                         key={card.id}
                         canEdit={canEdit} 
-                        card={card} 
+                        card={card}
+                        isLocked={lockedCards.has(card.id)}
+                        lockedBy={lockedCards.get(card.id)} 
                         onEdit={openEditCardModal}
                         onDelete={handleDeleteCard}
                         isPending={isPendingAnyMutation}
