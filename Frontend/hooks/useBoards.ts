@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getBoard, getBoards, addBoard, updateBoard, deleteBoard } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
-import { CategorizedBoards } from '@/types/board';
+import { Board, CategorizedBoards } from '@/types/board';
 import toast from 'react-hot-toast';
 
 export function useBoard(boardId: string) {
@@ -19,22 +19,48 @@ export function useBoard(boardId: string) {
   const updateBoardMutation = useMutation({
     mutationFn: (params: { id: string; name: string }) => updateBoard(params.id, params.name),
 
-    onSuccess: (updatedBoard) => {
-      queryClient.setQueryData(queryKeys.board(updatedBoard.id), updatedBoard);
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.board(boardId) });
+      await queryClient.cancelQueries({ queryKey: queryKeys.boards() });
+
+      const previousBoard = queryClient.getQueryData(queryKeys.board(boardId));
+      const previousBoards = queryClient.getQueryData(queryKeys.boards());
+
+      const previous = { previousBoard, previousBoards };
+
+      queryClient.setQueryData(queryKeys.board(boardId), (old: Board | undefined) => {
+        if (!old) return old;
+        
+        return {
+          ...old,
+          name: variables.name
+        };
+      });
+
       queryClient.setQueryData(queryKeys.boards(), (old: CategorizedBoards | undefined) => {
         if (!old) return old;
         return {
-          ownedBoards: old.ownedBoards.map(board=>board.id===updatedBoard.id?updateBoard:board),
-          sharedBoards: old.sharedBoards.map(board=>board.id===updatedBoard.id?updateBoard:board)
+          ownedBoards: old.ownedBoards.map(board => board.id === variables.id ? { ...board, name: variables.name } : board),
+          sharedBoards: old.sharedBoards.map(board => board.id === variables.id ? { ...board, name: variables.name } : board)
         };
       });
+
+      return { previous };
+    },
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.boards() });
       toast.success('Board updated successfully');
     },
 
-    onError: (error) => {
+    onError: (error, _variables, onMutateResult) => {
       console.error('Failed to update board:', error);
       toast.error('Failed to update board');
-      queryClient.invalidateQueries({ queryKey: queryKeys.boards() });
+      if(onMutateResult?.previous){
+        queryClient.setQueryData(queryKeys.board(boardId), onMutateResult.previous.previousBoard);
+        queryClient.setQueryData(queryKeys.boards(), onMutateResult.previous.previousBoards);
+      }
     }
   });
 
@@ -42,16 +68,21 @@ export function useBoard(boardId: string) {
   const deleteBoardMutation = useMutation({
     mutationFn: (id: string) => deleteBoard(id),
 
-    onMutate: async (id: string) => {
+    onMutate: async (variable) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.board(variable) });
       await queryClient.cancelQueries({ queryKey: queryKeys.boards() });
 
-      const previous = queryClient.getQueryData(queryKeys.boards());
+      const previousBoard = queryClient.getQueryData(queryKeys.board(boardId));
+      const previousBoards = queryClient.getQueryData(queryKeys.boards());
 
+      const previous = { previousBoard, previousBoards };
+
+      queryClient.removeQueries({ queryKey: queryKeys.board(variable) });
       queryClient.setQueryData(queryKeys.boards(), (old: CategorizedBoards | undefined) => {
         if (!old) return old;
         return {
-          ownedBoards: old.ownedBoards.filter(board => board.id !== id),
-          sharedBoards: old.sharedBoards.filter(board => board.id !== id)
+          ownedBoards: old.ownedBoards.filter(board => board.id !== variable),
+          sharedBoards: old.sharedBoards.filter(board => board.id !== variable)
         };
       });
 
@@ -62,11 +93,12 @@ export function useBoard(boardId: string) {
       toast.success('Board deleted successfully');
     },
 
-    onError: (error, variables, context) => {
+    onError: (error, variable, onMutateResult) => {
       console.error('Failed to delete board:', error);
       toast.error('Failed to delete board');
-      if (context?.previous) {
-        queryClient.setQueryData(queryKeys.boards(), context.previous);
+      if (onMutateResult?.previous) {
+        queryClient.setQueryData(queryKeys.board(variable), onMutateResult.previous.previousBoard);
+        queryClient.setQueryData(queryKeys.boards(), onMutateResult.previous.previousBoards);
       }
     }
   });
@@ -92,11 +124,11 @@ export function useBoards(){
   const addBoardMutation = useMutation({
     mutationFn: (name: string) => addBoard(name),
 
-    onSuccess: (newBoard) => {
+    onSuccess: (data) => {
       queryClient.setQueryData(queryKeys.boards(), (old: CategorizedBoards | undefined) => {
         if (!old) return old;
         return {
-          ownedBoards: [...old.ownedBoards, newBoard],
+          ownedBoards: [...old.ownedBoards, data],
           sharedBoards: old.sharedBoards
         };
       });

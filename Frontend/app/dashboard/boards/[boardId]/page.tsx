@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useId, useRef} from "react";
+import { useState, useId} from "react";
 import { DndContext, DragCancelEvent, DragEndEvent, DragOverEvent, DragOverlay, DragStartEvent, UniqueIdentifier, pointerWithin } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove, horizontalListSortingStrategy} from '@dnd-kit/sortable';
 import DroppableColumn from "@/components/DroppableColumn";
@@ -60,11 +60,6 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     mode: null,
     columnId: null
   });
-
-  // const dragOriginRef = useRef<{
-  //   container: Column;
-  //   itemIndex: number;
-  // } | null>(null);
 
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
@@ -211,14 +206,6 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     
     setActiveId(active.id);
     lockResource({ boardId, resourceId: active.id.toString() });
-
-    // const activeContainer = findContainer(active.id.toString(), 'card');
-    // if (activeContainer) {
-    //   dragOriginRef.current = {
-    //     container: activeContainer,
-    //     itemIndex: activeContainer.cards.findIndex(i => i.id === active.id),
-    //   };
-    // }
   }
 
   const handleDragOver = async (event: DragOverEvent) => {
@@ -308,7 +295,6 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     
     if (!over) {
       setActiveId(null);
-      //dragOriginRef.current = null;
       return;
     }
 
@@ -320,7 +306,6 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
 
       if (!activeColumn) {
         setActiveId(null);
-        //dragOriginRef.current = null;
         unlockResource({ boardId, resourceId: active.id.toString() });
         return;
       }
@@ -336,20 +321,11 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
       reorderColumnsMutation.mutate(reorderedColumnData);
       
       setActiveId(null);
-      //dragOriginRef.current = null;
       unlockResource({ boardId, resourceId: active.id.toString() });
       return;
     }
 
     //SCENARIO 2: Dragging a CARD
-
-    // if(!dragOriginRef.current){
-    //   setActiveId(null);
-    //   dragOriginRef.current = null;
-    //   unlockResource({ boardId, resourceId: active.id.toString() });
-    //   return;
-    // }
-
     const activeColumn = findContainer(active.id.toString(), 'card');
     if(!activeColumn){
       setActiveId(null);
@@ -358,15 +334,6 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
       return;
     }
     const activeCardIndex = activeColumn.cards.findIndex(i => i.id === active.id);
-
-    // const isSamePosition = (dragOriginRef.current.container.id === activeColumn.id) && (dragOriginRef.current.itemIndex === activeCardIndex);
-
-    // if(isSamePosition){
-    //   setActiveId(null);
-    //   dragOriginRef.current = null;
-    //   unlockResource({ boardId, resourceId: active.id.toString() });
-    //   return;
-    // }
 
     const reorderedCardData: ReorderCard = {
       cardId: active.id.toString(),
@@ -378,14 +345,12 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     reorderCardsMutation.mutate(reorderedCardData);
 
     setActiveId(null);
-    //dragOriginRef.current = null;
     unlockResource({ boardId, resourceId: active.id.toString() });
   };
 
   const handleDragCancel = (event: DragCancelEvent) => {
     const {active} = event;
     setActiveId(null);
-    //dragOriginRef.current = null;
     unlockResource({ boardId, resourceId: active.id.toString() });
     queryClient.invalidateQueries({queryKey: queryKeys.board(boardId), refetchType: 'active', exact: true});
   };
