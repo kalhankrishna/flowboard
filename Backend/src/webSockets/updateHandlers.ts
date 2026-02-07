@@ -1,7 +1,7 @@
 import { Socket, Server } from "socket.io";
-import { Card } from "@prisma/client";
+import { Card, Column } from "@prisma/client";
 import { ReorderCardsInput } from "../schemas/card.schema";
-
+import { ReorderColumnsInput } from "../schemas/column.schema";
 type SuccessResponse = {
   success: true;
   resourceId: string;
@@ -56,6 +56,50 @@ export function registerUpdateHandlers(io: Server, socket: Socket) {
         catch (err) {
             console.error(err);
             callback({ success: false, error: `Failed to broadcast reorder cards: ${err}` });
+        }
+    });
+
+    socket.on("ADD_COLUMN", async ({boardId, column}: {boardId: string, column: Column}, callback: (response: UpdateResponse) => void) => {
+        try{
+            socket.to(`board:${boardId}`).emit("COLUMN_ADDED", column );
+            callback({ success: true, resourceId: column.id });
+        }
+        catch (err) {
+            console.error(err);
+            callback({ success: false, error: `Failed to broadcast add column: ${err}` });
+        }
+    });
+
+    socket.on("UPDATE_COLUMN", async ({boardId, updatedColumn}: {boardId: string, updatedColumn: Column}, callback: (response: UpdateResponse) => void) => {
+        try{
+            socket.to(`board:${boardId}`).emit("COLUMN_UPDATED", updatedColumn );
+            callback({ success: true, resourceId: updatedColumn.id });
+        }
+        catch (err) {
+            console.error(err);
+            callback({ success: false, error: `Failed to broadcast update column: ${err}` });
+        }
+    });
+
+    socket.on("DELETE_COLUMN", async ({boardId, columnId}: {boardId: string, columnId: string}, callback: (response: UpdateResponse) => void) => {
+        try{
+            socket.to(`board:${boardId}`).emit("COLUMN_DELETED", columnId );
+            callback({ success: true, resourceId: columnId });
+        }
+        catch (err) {
+            console.error(err);
+            callback({ success: false, error: `Failed to broadcast delete column: ${err}` });
+        }
+    });
+
+    socket.on("REORDER_COLUMNS", async ({boardId, reorderData}: {boardId: string, reorderData: ReorderColumnsInput}, callback: (response: UpdateResponse) => void) => {
+        try{
+            socket.to(`board:${boardId}`).emit("COLUMNS_REORDERED", reorderData );
+            callback({ success: true, resourceId: boardId });
+        }
+        catch (err) {
+            console.error(err);
+            callback({ success: false, error: `Failed to broadcast reorder columns: ${err}` });
         }
     });
 }

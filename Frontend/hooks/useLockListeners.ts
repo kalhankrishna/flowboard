@@ -15,7 +15,6 @@ export const useLockListeners = (boardId: string | null) => {
 
         const handleResourceLock = ( { resourceId, userName }: LockedResource) => {
           setLockedResources(prev => new Map(prev).set(resourceId, userName));
-          console.log(lockedResources);
         }
 
         const handleResourceUnlock = ( { resourceId }: { resourceId: string }) => {
@@ -24,7 +23,6 @@ export const useLockListeners = (boardId: string | null) => {
                 updated.delete(resourceId);
                 return updated;
             });
-            console.log(lockedResources);
         }
 
         const handleInitLocks = (locks: LockedResource[]) => {

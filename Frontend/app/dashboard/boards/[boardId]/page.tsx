@@ -221,17 +221,40 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     // }
   }
 
-  const handleDragOver = (event: DragOverEvent) => {
+  const handleDragOver = async (event: DragOverEvent) => {
     const { active, over } = event;
     
     if (!over || active.id === over.id) return;
 
+    const isActiveCard = findContainer(active.id.toString(), 'card') !== undefined;
+
+    if(!isActiveCard){
+      const activeColumn = findContainer(active.id.toString(), 'container');
+      const overColumn = findContainer(over.id.toString(), 'container');
+
+      if (!activeColumn || !overColumn) return;
+
+      if (activeColumn.id !== overColumn.id) {
+        const oldIndex = board.columns.findIndex(c => c.id === activeColumn.id);
+        const newIndex = board.columns.findIndex(c => c.id === overColumn.id);
+        
+        const newColumns = arrayMove(board.columns, oldIndex, newIndex);
+        
+        const newBoardState = {
+          ...board,
+          columns: newColumns
+        };
+
+        await queryClient.cancelQueries({ queryKey: queryKeys.board(boardId) });
+        queryClient.setQueryData(queryKeys.board(boardId), newBoardState);
+        return;
+      }
+    }
+
     const activeContainer = findContainer(active.id.toString(), 'card');
     const overContainer = findContainer(over.id.toString(), 'container') || findContainer(over.id.toString(), 'card');
     
-    if (!activeContainer || !overContainer) {
-      return
-    };
+    if (!activeContainer || !overContainer) return;
 
     const activeContainerIndex = board.columns.findIndex(c => c.id === activeContainer.id);
     const overContainerIndex = board.columns.findIndex(c => c.id === overContainer.id);
@@ -254,25 +277,28 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
       ...board,
       columns: newColumns
     };
-
+    
     if(isSameContainer){
       if(!isOverCard){
         const overIndex = overContainer.cards.length - 1;
         const movedCard = arrayMove(activeContainer.cards, activeItemIndex, overIndex);
         newColumns[activeContainerIndex].cards = movedCard;
         
+        await queryClient.cancelQueries({ queryKey: queryKeys.board(boardId) });
         queryClient.setQueryData(queryKeys.board(boardId), newBoardState);
         return;
       }
       const movedCard = arrayMove(activeContainer.cards, activeItemIndex, overItemIndex);
       newColumns[activeContainerIndex].cards = movedCard;
       
+      await queryClient.cancelQueries({ queryKey: queryKeys.board(boardId) });
       queryClient.setQueryData(queryKeys.board(boardId), newBoardState);
     }
     else {
       const [movedCard] = newColumns[activeContainerIndex].cards.splice(activeItemIndex, 1);
       newColumns[overContainerIndex].cards.splice(overItemIndex, 0, movedCard);
       
+      await queryClient.cancelQueries({ queryKey: queryKeys.board(boardId) });
       queryClient.setQueryData(queryKeys.board(boardId), newBoardState);
     }
   };
@@ -291,42 +317,28 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     //SCENARIO 1: Dragging a COLUMN
     if (!isActiveCard) {
       const activeColumn = findContainer(active.id.toString(), 'container');
-      const overColumn = findContainer(over.id.toString(), 'container');
 
-      if (!activeColumn || !overColumn) {
+      if (!activeColumn) {
         setActiveId(null);
         //dragOriginRef.current = null;
         unlockResource({ boardId, resourceId: active.id.toString() });
         return;
       }
 
-      if (activeColumn.id !== overColumn.id) {
-        const oldIndex = board.columns.findIndex(c => c.id === activeColumn.id);
-        const newIndex = board.columns.findIndex(c => c.id === overColumn.id);
-        
-        const newColumns = arrayMove(board.columns, oldIndex, newIndex);
-        
-        const newBoardState = {
-          ...board,
-          columns: newColumns
-        };
+      const activeColumnIndex = board.columns.findIndex(col => col.id === activeColumn.id);
 
-        const reorderedColumnData: ReorderColumn = {
-          columnId: activeColumn.id,
-          prevColumnId: newIndex > 0 ? board.columns[newIndex].id : null,
-          nextColumnId: newIndex < board.columns.length - 1 ? board.columns[newIndex + 1].id : null,
-          boardId: board.id
-        }
-
-        queryClient.setQueryData(queryKeys.board(boardId), newBoardState);
-
-        reorderColumnsMutation.mutate(reorderedColumnData);
-        
-        setActiveId(null);
-        //dragOriginRef.current = null;
-        unlockResource({ boardId, resourceId: active.id.toString() });
-        return;
-      }
+      const reorderedColumnData: ReorderColumn = {
+        columnId: activeColumn.id,
+        prevColumnId: activeColumnIndex !== 0 ? board.columns[activeColumnIndex-1].id : null,
+        nextColumnId: activeColumnIndex < board.columns.length - 1 ? board.columns[activeColumnIndex + 1].id : null,
+        boardId: board.id
+      };
+      reorderColumnsMutation.mutate(reorderedColumnData);
+      
+      setActiveId(null);
+      //dragOriginRef.current = null;
+      unlockResource({ boardId, resourceId: active.id.toString() });
+      return;
     }
 
     //SCENARIO 2: Dragging a CARD

@@ -1,10 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { addCard, updateCard, deleteCard, reorderCard } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
-import { Card, ReorderCard } from '@/types/board';
+import { Board, Card, Column, ReorderCard } from '@/types/board';
 import { useUpdateBroadcasts } from './useUpdateBroadcasts';
 import toast from 'react-hot-toast';
-import { add } from '@dnd-kit/utilities';
 
 export function useCards(boardId: string) {
   const queryClient = useQueryClient();
@@ -16,21 +15,21 @@ export function useCards(boardId: string) {
     mutationFn: (params: { columnId: string; title: string; description: string | null; position: string }) =>
       addCard(params.columnId, params.title, params.description, params.position),
     
-    onSuccess: (newCard, variables) => {
-      queryClient.setQueryData(queryKeys.board(boardId), (old: any) => {
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(queryKeys.board(boardId), (old: Board | undefined) => {
         if (!old) return old;
         
         return {
           ...old,
-          columns: old.columns.map((col: any) =>
+          columns: old.columns.map((col: Column) =>
             col.id === variables.columnId
-              ? { ...col, cards: [...col.cards, newCard] }
+              ? { ...col, cards: [...col.cards, data] }
               : col
           )
         };
       });
       toast.success('Card added successfully');
-      addCardBroadcast({ boardId, card: newCard });
+      addCardBroadcast({ boardId, card: data });
     },
     
     onError: (error) => {
@@ -44,29 +43,45 @@ export function useCards(boardId: string) {
   const updateCardMutation = useMutation({
     mutationFn: (params: { id: string; title: string; description: string | null; position: string }) =>
       updateCard(params.id, params.title, params.description, params.position),
-    
-    onSuccess: (updatedCard) => {
-      queryClient.setQueryData(queryKeys.board(boardId), (old: any) => {
+
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.board(boardId) });
+      
+      const previous = queryClient.getQueryData(queryKeys.board(boardId));
+
+      queryClient.setQueryData(queryKeys.board(boardId), (old: Board | undefined) => {
         if (!old) return old;
         
         return {
           ...old,
-          columns: old.columns.map((col: any) => ({
+          columns: old.columns.map((col: Column) => ({
             ...col,
             cards: col.cards.map((card: Card) =>
-              card.id === updatedCard.id ? updatedCard : card
+              card.id === variables.id ? {
+                ...card,
+                title: variables.title,
+                description: variables.description,
+                position: variables.position
+              } : card
             )
           }))
         };
       });
-      toast.success('Card updated successfully');
-      updateCardBroadcast({ boardId, card: updatedCard });
+      return { previous };
     },
     
-    onError: (error) => {
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
+      toast.success('Card updated successfully');
+      updateCardBroadcast({ boardId, updatedCard: data });
+    },
+    
+    onError: (error, _variables, onMutateResult) => {
       console.error('Failed to update card:', error);
       toast.error('Failed to update card');
-      queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
+      if(onMutateResult?.previous) {
+        queryClient.setQueryData(queryKeys.board(boardId), onMutateResult.previous);
+      }
     }
   });
   
@@ -74,19 +89,19 @@ export function useCards(boardId: string) {
   const deleteCardMutation = useMutation({
     mutationFn: (cardId: string) => deleteCard(cardId),
     
-    onMutate: async (cardId) => {
+    onMutate: async (variable) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.board(boardId) });
       
       const previous = queryClient.getQueryData(queryKeys.board(boardId));
       
-      queryClient.setQueryData(queryKeys.board(boardId), (old: any) => {
+      queryClient.setQueryData(queryKeys.board(boardId), (old: Board | undefined) => {
         if (!old) return old;
         
         return {
           ...old,
-          columns: old.columns.map((col: any) => ({
+          columns: old.columns.map((col: Column) => ({
             ...col,
-            cards: col.cards.filter((card: Card) => card.id !== cardId)
+            cards: col.cards.filter((card: Card) => card.id !== variable)
           }))
         };
       });
@@ -94,12 +109,13 @@ export function useCards(boardId: string) {
       return { previous };
     },
 
-    onSuccess: (_, cardId) => {
+    onSuccess: (_data, variable) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
       toast.success('Card deleted successfully');
-      deleteCardBroadcast({ boardId, cardId });
+      deleteCardBroadcast({ boardId, cardId: variable });
     },
     
-    onError: (error, variables, context) => {
+    onError: (error, _variable, context) => {
       console.error('Failed to delete card:', error);
       toast.error('Failed to delete card');
       if (context?.previous) {
@@ -112,8 +128,9 @@ export function useCards(boardId: string) {
   const reorderCardsMutation = useMutation({
     mutationFn: (data: ReorderCard) => reorderCard(data),
     
-    onSuccess: (_, data) => {
-      reorderCardsBroadcast({ boardId, reorderData: data });
+    onSuccess: (_data, variable) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
+      reorderCardsBroadcast({ boardId, reorderData: variable });
     },
 
     onError: (error) => {

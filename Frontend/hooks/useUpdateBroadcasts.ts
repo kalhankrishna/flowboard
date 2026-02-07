@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useSocket } from '@/components/SocketProvider';
-import { Card, ReorderCard } from '@/types/board';
+import { Card, Column, ReorderCard, ReorderColumn } from '@/types/board';
+import { add } from '@dnd-kit/utilities';
 
 type SuccessResponse = {
   success: true;
@@ -27,10 +28,10 @@ export const useUpdateBroadcasts = () => {
         });
     }, [socket]);
 
-    const updateCardBroadcast = useCallback(({boardId, card}: {boardId: string, card: Card}) => {
+    const updateCardBroadcast = useCallback(({boardId, updatedCard}: {boardId: string, updatedCard: Card}) => {
         if (!socket) return;
         
-        socket.emit('UPDATE_CARD', {boardId, card}, (response: UpdateResponse) => {
+        socket.emit('UPDATE_CARD', {boardId, updatedCard}, (response: UpdateResponse) => {
             if (!response.success) {
                 console.error(response.error);
             }
@@ -57,5 +58,45 @@ export const useUpdateBroadcasts = () => {
         });
     }, [socket]);
 
-    return { addCardBroadcast, updateCardBroadcast, deleteCardBroadcast, reorderCardsBroadcast};
+    const addColumnBroadcast = useCallback(({boardId, column}: {boardId: string, column: Column}) => {
+        if (!socket) return;
+        
+        socket.emit('ADD_COLUMN', {boardId, column}, (response: UpdateResponse) => {
+            if (!response.success) {
+                console.error(response.error);
+            }
+        });
+    }, [socket]);
+
+    const updateColumnBroadcast = useCallback(({boardId, updatedColumn}: {boardId: string, updatedColumn: Column}) => {
+        if (!socket) return;
+        
+        socket.emit('UPDATE_COLUMN', {boardId, updatedColumn}, (response: UpdateResponse) => {
+            if (!response.success) {
+                console.error(response.error);
+            }
+        });
+    }, [socket]);
+
+    const deleteColumnBroadcast = useCallback(({boardId, columnId}: {boardId: string, columnId: string}) => {
+        if (!socket) return;
+        
+        socket.emit('DELETE_COLUMN', {boardId, columnId}, (response: UpdateResponse) => {
+            if (!response.success) {
+                console.error(response.error);
+            }
+        });
+    }, [socket]);
+
+    const reorderColumnsBroadcast = useCallback(({boardId, reorderData}: {boardId: string, reorderData: ReorderColumn}) => {
+        if (!socket) return;
+        
+        socket.emit('REORDER_COLUMNS', {boardId, reorderData}, (response: UpdateResponse) => {
+            if (!response.success) {
+                console.error(response.error);
+            }
+        });
+    }, [socket]);
+
+    return { addCardBroadcast, updateCardBroadcast, deleteCardBroadcast, reorderCardsBroadcast, addColumnBroadcast, updateColumnBroadcast, deleteColumnBroadcast, reorderColumnsBroadcast };
 };

@@ -1,27 +1,31 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { addColumn, updateColumn, deleteColumn, reorderColumn } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
-import { Column, ReorderColumn } from '@/types/board';
+import { Board, Column, ReorderColumn } from '@/types/board';
+import { useUpdateBroadcasts } from './useUpdateBroadcasts';
 import toast from 'react-hot-toast';
 
 export function useColumns(boardId: string) {
   const queryClient = useQueryClient();
+
+  const {addColumnBroadcast, updateColumnBroadcast, deleteColumnBroadcast, reorderColumnsBroadcast} = useUpdateBroadcasts();
   
   //ADD COLUMN
   const addColumnMutation = useMutation({
     mutationFn: (params: { boardId: string; title: string; position: string }) =>
       addColumn(params.boardId, params.title, params.position),
     
-    onSuccess: (newColumn) => {
-      queryClient.setQueryData(queryKeys.board(boardId), (old: any) => {
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.board(boardId), (old: Board | undefined) => {
         if (!old) return old;
         
         return {
           ...old,
-          columns: [...old.columns, { ...newColumn, cards: [] }]
+          columns: [...old.columns, { ...data, cards: [] }]
         };
       });
       toast.success('Column added successfully');
+      addColumnBroadcast({ boardId, column: data });
     },
     
     onError: (error) => {
@@ -35,27 +39,40 @@ export function useColumns(boardId: string) {
   const updateColumnMutation = useMutation({
     mutationFn: (params: { id: string; title: string; position: string }) =>
       updateColumn(params.id, params.title, params.position),
-    
-    onSuccess: (updatedColumn) => {
-      queryClient.setQueryData(queryKeys.board(boardId), (old: any) => {
+
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({queryKey: queryKeys.board(boardId)});
+
+      const previous = queryClient.getQueryData(queryKeys.board(boardId));
+
+      queryClient.setQueryData(queryKeys.board(boardId), (old: Board | undefined) => {
         if (!old) return old;
         
         return {
           ...old,
           columns: old.columns.map((col: Column) =>
-            col.id === updatedColumn.id
-              ? { ...col, title: updatedColumn.title, position: updatedColumn.position }
+            col.id === variables.id
+              ? { ...col, title: variables.title, position: variables.position }
               : col
           )
         };
       });
-      toast.success('Column updated successfully');
+
+      return { previous };
     },
     
-    onError: (error) => {
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({queryKey: queryKeys.board(boardId)});
+      toast.success('Column updated successfully');
+      updateColumnBroadcast({boardId, updatedColumn: data});
+    },
+    
+    onError: (error, _variables, onMutateResult) => {
       console.error('Failed to update column:', error);
       toast.error('Failed to update column');
-      queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
+      if(onMutateResult?.previous){
+        queryClient.setQueryData(queryKeys.board(boardId), onMutateResult.previous);
+      }
     }
   });
   
@@ -63,7 +80,7 @@ export function useColumns(boardId: string) {
   const deleteColumnMutation = useMutation({
     mutationFn: (columnId: string) => deleteColumn(columnId),
     
-    onMutate: async (columnId) => {
+    onMutate: async (variable) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.board(boardId) });
       
       const previous = queryClient.getQueryData(queryKeys.board(boardId));
@@ -73,22 +90,24 @@ export function useColumns(boardId: string) {
         
         return {
           ...old,
-          columns: old.columns.filter((col: Column) => col.id !== columnId)
+          columns: old.columns.filter((col: Column) => col.id !== variable)
         };
       });
       
       return { previous };
     },
 
-    onSuccess: () => {
+    onSuccess: (_data, variable) => {
+      queryClient.invalidateQueries({queryKey: queryKeys.board(boardId)});
       toast.success('Column deleted successfully');
+      deleteColumnBroadcast({boardId, columnId: variable});
     },
     
-    onError: (error, variables, context) => {
+    onError: (error, _variable, onMutateResult) => {
       console.error('Failed to delete column:', error);
       toast.error('Failed to delete column');
-      if (context?.previous) {
-        queryClient.setQueryData(queryKeys.board(boardId), context.previous);
+      if (onMutateResult?.previous) {
+        queryClient.setQueryData(queryKeys.board(boardId), onMutateResult.previous);
       }
     }
   });
@@ -97,7 +116,12 @@ export function useColumns(boardId: string) {
   const reorderColumnsMutation = useMutation({
     mutationFn: (data : ReorderColumn) => reorderColumn(data),
 
-    onError: (error, variables, context) => {
+    onSuccess: (_data, variable) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
+      reorderColumnsBroadcast({ boardId, reorderData: variable });
+    },
+
+    onError: (error) => {
       console.error('Failed to reorder columns:', error);
       toast.error('Failed to reorder columns');
       queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
