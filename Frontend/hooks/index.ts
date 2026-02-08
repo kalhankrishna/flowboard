@@ -10,3 +10,5 @@ export { useLock } from './useLocks';
 export { useLockListeners } from './useLockListeners';
 export { useUpdateListeners } from './useUpdateListeners';
 export { useUpdateBroadcasts } from './useUpdateBroadcasts';
+export { useDragListeners } from './useDragListeners';
+export { useDragBroadcasts } from './useDragBroadcasts';

@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { useSocket } from '@/components/SocketProvider';
 import { Card, Column, ReorderCard, ReorderColumn } from '@/types/board';
-import { add } from '@dnd-kit/utilities';
 
 type SuccessResponse = {
   success: true;

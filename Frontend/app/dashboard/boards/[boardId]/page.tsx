@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useId} from "react";
-import { DndContext, DragCancelEvent, DragEndEvent, DragOverEvent, DragOverlay, DragStartEvent, UniqueIdentifier, pointerWithin } from '@dnd-kit/core';
+import { DndContext, DragCancelEvent, DragEndEvent, DragMoveEvent, DragOverEvent, DragOverlay, DragStartEvent, UniqueIdentifier, pointerWithin } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove, horizontalListSortingStrategy} from '@dnd-kit/sortable';
 import DroppableColumn from "@/components/DroppableColumn";
 import SortableCard from "@/components/SortableCard";
@@ -10,11 +10,12 @@ import ColumnContent from "@/components/ColumnContent";
 import CardModal from "@/components/CardModal";
 import ColumnModal from "@/components/ColumnModal";
 import { PresenceIndicator } from "@/components/PresenceIndicator";
-import { useBoard, useCards, useColumns, useSharing, useBoardRoom, useLock, useLockListeners, useUpdateListeners } from "@/hooks";
+import RemoteDragOverlay from "@/components/RemoteDragOverlay";
+import { useBoard, useCards, useColumns, useSharing, useBoardRoom, useLock, useLockListeners, useUpdateListeners, useDragBroadcasts, useDragListeners } from "@/hooks";
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import * as React from 'react'
-import { ReorderCard, ReorderColumn } from "@/types/board";
+import { Card, Column, ReorderCard, ReorderColumn } from "@/types/board";
 import ShareModal from '@/components/ShareModal';
 import { useAuthStore } from '@/store/authStore';
 import { BoardRole } from '@/types/share';
@@ -27,6 +28,8 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
   const { isInRoom, roomError } = useBoardRoom(boardId);
   const { lockResource, unlockResource } = useLock();
   const lockedResources = useLockListeners(boardId);
+  const { dragStartBroadcast, dragOverBroadcast, dragEndBroadcast } = useDragBroadcasts();
+  const remoteDrags = useDragListeners(boardId);
   useUpdateListeners(boardId);
 
   const id = useId();
@@ -87,6 +90,20 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  const remoteDraggedCards: Card[] = [];
+  const remoteDraggedColumns: Column[] = [];
+
+  remoteDrags.forEach((_, resourceId) => {
+    if (findCard(resourceId)) {
+      const card = findCard(resourceId);
+      if (card) remoteDraggedCards.push(card);
+    }
+    if (findContainer(resourceId, 'container')) {
+      const column = findContainer(resourceId, 'container');
+      if (column) remoteDraggedColumns.push(column);
+    }
+  });
 
   const isPendingAnyMutation = (addCardMutation.isPending || updateCardMutation.isPending || deleteCardMutation.isPending || 
   addColumnMutation.isPending || updateColumnMutation.isPending || deleteColumnMutation.isPending || 
@@ -206,12 +223,20 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     
     setActiveId(active.id);
     lockResource({ boardId, resourceId: active.id.toString() });
+    dragStartBroadcast({ boardId, resourceId: active.id.toString() });
   }
 
-  const handleDragOver = async (event: DragOverEvent) => {
+  const handleDragOver = async (event: DragMoveEvent) => {
     const { active, over } = event;
     
     if (!over || active.id === over.id) return;
+
+    const currentRect = active.rect.current.translated;
+    if(!currentRect) return;
+    const finalX = currentRect.left;
+    const finalY = currentRect.top;
+
+    dragOverBroadcast({ boardId, resource: { resourceId: active.id.toString(), x: finalX, y: finalY } });
 
     const isActiveCard = findContainer(active.id.toString(), 'card') !== undefined;
 
@@ -298,6 +323,8 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
       return;
     }
 
+    dragEndBroadcast({ boardId, resourceId: active.id.toString() });
+
     const isActiveCard = findContainer(active.id.toString(), 'card') !== undefined;
 
     //SCENARIO 1: Dragging a COLUMN
@@ -352,11 +379,12 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     const {active} = event;
     setActiveId(null);
     unlockResource({ boardId, resourceId: active.id.toString() });
+    dragEndBroadcast({ boardId, resourceId: active.id.toString() });
     queryClient.invalidateQueries({queryKey: queryKeys.board(boardId), refetchType: 'active', exact: true});
   };
 
   return (
-    <DndContext id={id} sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel} collisionDetection={pointerWithin}>
+    <DndContext id={id} sensors={sensors} onDragStart={handleDragStart} onDragMove={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel} collisionDetection={pointerWithin}>
       <div className="p-8">
         <h1 className="text-2xl font-bold mb-2">Kanban Board</h1>
         <div className="flex justify-end">
@@ -430,6 +458,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
           />
         )}
       </div>
+      <RemoteDragOverlay remoteDrags={remoteDrags} cards={remoteDraggedCards} columns={remoteDraggedColumns} />
       <DragOverlay>
         {activeId && findCard(activeId.toString()) && (
           <div className="bg-slate-300 rounded-md my-2 p-2 shadow-md opacity-50">

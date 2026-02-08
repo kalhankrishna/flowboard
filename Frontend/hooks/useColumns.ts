@@ -85,7 +85,7 @@ export function useColumns(boardId: string) {
       
       const previous = queryClient.getQueryData(queryKeys.board(boardId));
       
-      queryClient.setQueryData(queryKeys.board(boardId), (old: any) => {
+      queryClient.setQueryData(queryKeys.board(boardId), (old: Board | undefined) => {
         if (!old) return old;
         
         return {

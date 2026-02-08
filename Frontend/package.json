@@ -21,6 +21,7 @@
     "react-dom": "19.2.3",
     "react-hot-toast": "^2.6.0",
     "socket.io-client": "^4.8.3",
+    "throttle-debounce": "^5.0.2",
     "zustand": "^5.0.10"
   },
   "devDependencies": {
@@ -29,6 +30,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/throttle-debounce": "^5.0.2",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",

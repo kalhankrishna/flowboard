@@ -14,6 +14,7 @@ import { Server } from 'socket.io';
 import { registerBoardHandlers } from './webSockets/boardHandlers.js';
 import { registerLockHandlers } from './webSockets/lockHandlers.js';
 import { registerUpdateHandlers } from './webSockets/updateHandlers.js';
+import { registerDragHandlers } from './webSockets/dragHandlers.js';
 
 dotenv.config();
 validateEnv();
@@ -37,6 +38,7 @@ io.on('connection', (socket) => {
   registerBoardHandlers(io, socket);
   registerLockHandlers(io, socket);
   registerUpdateHandlers(io, socket);
+  registerDragHandlers(io, socket);
 });
 
 app.locals.io = io;

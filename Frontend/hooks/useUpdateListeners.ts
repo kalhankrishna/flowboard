@@ -178,5 +178,5 @@ export const useUpdateListeners = (boardId: string | null) => {
             socket.off('COLUMN_DELETED', handleDeleteColumn);
             socket.off('COLUMNS_REORDERED', handleReorderColumns);
         }
-    }, [socket, isConnected, boardId]);
+    }, [socket, isConnected, boardId, queryClient]);
 };

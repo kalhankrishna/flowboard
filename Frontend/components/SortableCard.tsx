@@ -30,7 +30,7 @@ export default function SortableCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: (isDragging || isLocked) ? 0.5 : 1,
     cursor: isLocked ? 'not-allowed' : 'grab',
   };
 

@@ -2,6 +2,7 @@ import { Server, Socket } from "socket.io";
 import { getRoleByBoardId } from "../lib/permission.helper";
 import { BoardRole } from "@prisma/client";
 import { resourceLocks } from "./lockHandlers";
+import { activeDrags } from "./dragHandlers";
 
 type SuccessResponse = {
   success: true;
@@ -63,6 +64,17 @@ export function registerBoardHandlers(io: Server, socket: Socket) {
             });
             
             socket.emit("BOARD_LOCKS_INIT", currentLocks);
+
+            const currentDrags: Array<{resourceId: string, userName: string, x: number, y: number}> = [];
+            activeDrags.forEach((drag, socketId) => {
+                if (drag.boardId === boardId) {
+                    const draggingSocket = io.sockets.sockets.get(socketId);
+                    const userName = draggingSocket?.data.userName || 'Anonymous';
+                    currentDrags.push({ resourceId: drag.draggedObj.resourceId, userName, x: drag.draggedObj.x, y: drag.draggedObj.y });
+                }
+            });
+
+            socket.emit("BOARD_DRAGS_INIT", currentDrags);
 
             callback({ success: true, boardId, role });
         }

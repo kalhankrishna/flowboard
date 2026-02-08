@@ -3,7 +3,7 @@
 import { useAuthHydration, useAuthSync } from '@/hooks';
 import { useAuthStore } from '@/store';
 import { useRouter } from 'next/navigation';
-import { use, useEffect } from 'react';
+import { useEffect } from 'react';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   useAuthHydration();
