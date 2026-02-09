@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit'
 import boardRoutes from './routes/boards.js';
 import cardRoutes from './routes/cards.js';
 import columnRoutes from './routes/columns.js';
@@ -46,6 +47,24 @@ app.locals.io = io;
 
 // Express
 
+// Rate limiters
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Too many login attempts. Try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true
+})
+
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 100,
+  message: { error: 'Too many requests. Please slow down.' },
+  standardHeaders: true,
+  legacyHeaders: false
+})
+
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -67,6 +86,9 @@ app.use(helmet({
 }))
 app.use(express.json());
 app.use(cookieParser());
+
+app.use('/api/auth/login', loginLimiter)
+app.use('/api/', apiLimiter)
 
 // Health check endpoint
 app.get('/health', (req, res) => {
