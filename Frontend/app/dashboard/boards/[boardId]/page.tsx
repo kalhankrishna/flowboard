@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useId} from "react";
+import { useState, useId, useMemo} from "react";
 import { DndContext, DragCancelEvent, DragEndEvent, DragOverEvent, DragOverlay, DragStartEvent, UniqueIdentifier, pointerWithin } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates} from '@dnd-kit/sortable';
 import DroppableColumn from "@/components/DroppableColumn";
@@ -29,6 +29,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
   const { lockResource, unlockResource } = useLock();
   const lockedResources = useLockListeners(boardId);
   const { dragStartBroadcast, dragOverBroadcast, dragEndBroadcast } = useDragBroadcasts();
+  const throttledBroadcast = useMemo(() => throttle(50, dragOverBroadcast), [dragOverBroadcast]);
   const remoteDrags = useDragListeners(boardId);
   useUpdateListeners(boardId);
 
@@ -141,8 +142,6 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
       );
     }
   }
-
-  const throttledBroadcast = throttle(50, dragOverBroadcast);
 
   //Event Handlers
   function openAddCardModal(columnId: string) {
