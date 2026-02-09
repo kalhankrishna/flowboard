@@ -16,14 +16,7 @@ export function useColumns(boardId: string) {
       addColumn(params.boardId, params.title, params.position),
     
     onSuccess: (data) => {
-      queryClient.setQueryData(queryKeys.board(boardId), (old: Board | undefined) => {
-        if (!old) return old;
-        
-        return {
-          ...old,
-          columns: [...old.columns, { ...data, cards: [] }]
-        };
-      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
       toast.success('Column added successfully');
       addColumnBroadcast({ boardId, column: data });
     },

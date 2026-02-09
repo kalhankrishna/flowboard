@@ -1,4 +1,5 @@
 import express from 'express';
+import { stripHtml } from 'string-strip-html';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middlewares/asyncHandler.js';
 import { createBoardSchema, updateBoardSchema } from '../schemas/board.schema.js';
@@ -81,7 +82,9 @@ router.get("/:id", asyncHandler(async(req, res)=>{
 // POST /api/boards
 router.post("/", asyncHandler(async (req, res) => {
   const reqData = createBoardSchema.parse(req.body);
-  const { name } = reqData;
+  const { name } = {
+    name: stripHtml(reqData.name).result.trim()
+  };
 
   if(!req.user){
     return res.status(401).json({ error: "Authentication required" });
@@ -119,7 +122,9 @@ router.post("/", asyncHandler(async (req, res) => {
 router.patch("/:id", asyncHandler(async (req, res) => {
   const id = req.params.id as string;
   const reqData = updateBoardSchema.parse(req.body);
-  const { name } = reqData;
+  const { name } = {
+    name: stripHtml(reqData.name).result.trim()
+  };
 
   if(!req.user){
     return res.status(401).json({ error: "Authentication required" });

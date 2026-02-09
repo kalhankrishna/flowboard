@@ -1,4 +1,5 @@
 import express from 'express';
+import { stripHtml } from 'string-strip-html'
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middlewares/asyncHandler.js';
 import { createColumnSchema, updateColumnSchema, reorderColumnsSchema } from '../schemas/column.schema.js';
@@ -12,7 +13,11 @@ router.use(requireAuth);
 // POST /api/columns
 router.post("/", asyncHandler(async(req, res)=>{
     const reqData = createColumnSchema.parse(req.body);
-    const {boardId, title, position} = reqData;
+    const {boardId, title, position} = {
+      boardId: reqData.boardId,
+      title: stripHtml(reqData.title).result.trim(),
+      position: reqData.position
+    };
 
     if(!req.user){
         return res.status(401).json({ error: "Authentication required" });
@@ -38,7 +43,10 @@ router.post("/", asyncHandler(async(req, res)=>{
 router.patch("/:id", asyncHandler(async(req, res)=>{
     const id = req.params.id as string;
     const reqData = updateColumnSchema.parse(req.body);
-    const {title, position} = reqData;
+    const {title, position} = {
+      title: stripHtml(reqData.title || "").result.trim(),
+      position: reqData.position
+    };
 
     if(!req.user){
         return res.status(401).json({ error: "Authentication required" });

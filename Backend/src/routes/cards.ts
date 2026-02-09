@@ -1,4 +1,5 @@
 import express from 'express';
+import { stripHtml } from 'string-strip-html'
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../middlewares/asyncHandler.js';
 import { createCardSchema, updateCardSchema, reorderCardsSchema } from '../schemas/card.schema.js';
@@ -12,7 +13,12 @@ router.use(requireAuth);
 // POST /api/cards
 router.post("/", asyncHandler(async (req, res)=>{
     const reqData = createCardSchema.parse(req.body);
-    const {columnId, title, description, position} = reqData;
+    const {columnId, title, description, position} = {
+      columnId: reqData.columnId,
+      title: stripHtml(reqData.title).result.trim(),
+      description: stripHtml(reqData.description || "").result.trim(),
+      position: reqData.position
+    };
 
     if(!req.user){
         return res.status(401).json({ error: "Authentication required" });
@@ -39,7 +45,12 @@ router.post("/", asyncHandler(async (req, res)=>{
 router.patch("/:id", asyncHandler(async (req, res)=>{
     const id = req.params.id as string;
     const reqData = updateCardSchema.parse(req.body);
-    const {title, description, position, columnId} = reqData;
+    const {title, description, position, columnId} = {
+      title: stripHtml(reqData.title || "").result.trim(),
+      description: stripHtml(reqData.description || "").result.trim(),
+      position: reqData.position,
+      columnId: reqData.columnId
+    };
 
     if(!req.user){
         return res.status(401).json({ error: "Authentication required" });

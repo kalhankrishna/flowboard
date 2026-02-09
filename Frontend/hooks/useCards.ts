@@ -15,19 +15,8 @@ export function useCards(boardId: string) {
     mutationFn: (params: { columnId: string; title: string; description: string | null; position: string }) =>
       addCard(params.columnId, params.title, params.description, params.position),
     
-    onSuccess: (data, variables) => {
-      queryClient.setQueryData(queryKeys.board(boardId), (old: Board | undefined) => {
-        if (!old) return old;
-        
-        return {
-          ...old,
-          columns: old.columns.map((col: Column) =>
-            col.id === variables.columnId
-              ? { ...col, cards: [...col.cards, data] }
-              : col
-          )
-        };
-      });
+    onSuccess: (data, _variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
       toast.success('Card added successfully');
       addCardBroadcast({ boardId, card: data });
     },
