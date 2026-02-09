@@ -33,15 +33,6 @@ export const useDragBroadcasts = () => {
         });
     }, [socket]);
 
-    // const dragOverBroadcast = useMemo(() => throttle(5, ({boardId, resource}: {boardId: string, resource: DragData}) => {
-    //     if (!socket) return;
-    //     socket.emit('DRAG_OVER', {boardId, resource}, (response: DragResponse) => {
-    //         if (!response.success) {
-    //             console.error(response.error);
-    //         }            
-    //     });
-    // }, {noLeading: false, noTrailing: false}),[socket]);
-
     const dragOverBroadcast = useCallback(({boardId, resource}: {boardId: string, resource: DragData}) => {
         if (!socket) return;
         socket.emit('DRAG_OVER', {boardId, resource}, (response: DragResponse) => {
@@ -53,8 +44,6 @@ export const useDragBroadcasts = () => {
 
     const dragEndBroadcast = useCallback(({boardId, resourceId}: {boardId: string,resourceId: string}) => {
         if (!socket) return;
-
-        //dragOverBroadcast.cancel();
 
         socket.emit('DRAG_END', {boardId, resourceId}, (response: DragResponse) => {
             if (!response.success) {

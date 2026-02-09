@@ -226,7 +226,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     dragStartBroadcast({ boardId, resourceId: active.id.toString() });
   }
 
-  const handleDragOver = async (event: DragMoveEvent) => {
+  const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
     
     if (!over || active.id === over.id) return;
@@ -256,9 +256,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
           ...board,
           columns: newColumns
         };
-
-        await queryClient.cancelQueries({ queryKey: queryKeys.board(boardId) });
-        queryClient.setQueryData(queryKeys.board(boardId), newBoardState);
+        requestAnimationFrame(() => {queryClient.setQueryData(queryKeys.board(boardId), newBoardState);});
         return;
       }
     }
@@ -296,22 +294,19 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
         const movedCard = arrayMove(activeContainer.cards, activeItemIndex, overIndex);
         newColumns[activeContainerIndex].cards = movedCard;
         
-        await queryClient.cancelQueries({ queryKey: queryKeys.board(boardId) });
-        queryClient.setQueryData(queryKeys.board(boardId), newBoardState);
+        requestAnimationFrame(() => {queryClient.setQueryData(queryKeys.board(boardId), newBoardState);});
         return;
       }
       const movedCard = arrayMove(activeContainer.cards, activeItemIndex, overItemIndex);
       newColumns[activeContainerIndex].cards = movedCard;
-      
-      await queryClient.cancelQueries({ queryKey: queryKeys.board(boardId) });
-      queryClient.setQueryData(queryKeys.board(boardId), newBoardState);
+
+      requestAnimationFrame(() => {queryClient.setQueryData(queryKeys.board(boardId), newBoardState);});
     }
     else {
       const [movedCard] = newColumns[activeContainerIndex].cards.splice(activeItemIndex, 1);
       newColumns[overContainerIndex].cards.splice(overItemIndex, 0, movedCard);
-      
-      await queryClient.cancelQueries({ queryKey: queryKeys.board(boardId) });
-      queryClient.setQueryData(queryKeys.board(boardId), newBoardState);
+
+      requestAnimationFrame(() => {queryClient.setQueryData(queryKeys.board(boardId), newBoardState);});
     }
   };
 
@@ -384,7 +379,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
   };
 
   return (
-    <DndContext id={id} sensors={sensors} onDragStart={handleDragStart} onDragMove={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel} collisionDetection={pointerWithin}>
+    <DndContext id={id} sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel} collisionDetection={pointerWithin}>
       <div className="p-8">
         <h1 className="text-2xl font-bold mb-2">Kanban Board</h1>
         <div className="flex justify-end">
