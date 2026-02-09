@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useId} from "react";
-import { DndContext, DragCancelEvent, DragEndEvent, DragMoveEvent, DragOverEvent, DragOverlay, DragStartEvent, UniqueIdentifier, pointerWithin } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, arrayMove, horizontalListSortingStrategy} from '@dnd-kit/sortable';
+import { DndContext, DragCancelEvent, DragEndEvent, DragOverEvent, DragOverlay, DragStartEvent, UniqueIdentifier, pointerWithin } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates} from '@dnd-kit/sortable';
 import DroppableColumn from "@/components/DroppableColumn";
 import SortableCard from "@/components/SortableCard";
 import CardContent from "@/components/CardContent";
@@ -20,7 +20,7 @@ import ShareModal from '@/components/ShareModal';
 import { useAuthStore } from '@/store/authStore';
 import { BoardRole } from '@/types/share';
 import { PointerSensor, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { throttle } from "throttle-debounce";
 
 export default function BoardPage({ params }: { params: Promise<{ boardId: string }> }) {
   const { boardId } = React.use(params);
@@ -142,6 +142,8 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     }
   }
 
+  const throttledBroadcast = throttle(50, dragOverBroadcast);
+
   //Event Handlers
   function openAddCardModal(columnId: string) {
     setCardModal({ open: true, mode: 'add', columnId, cardId: null });
@@ -236,7 +238,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     const finalX = currentRect.left;
     const finalY = currentRect.top;
 
-    dragOverBroadcast({ boardId, resource: { resourceId: active.id.toString(), x: finalX, y: finalY } });
+    throttledBroadcast({ boardId, resource: { resourceId: active.id.toString(), x: finalX, y: finalY } });
 
     const isActiveCard = findContainer(active.id.toString(), 'card') !== undefined;
 

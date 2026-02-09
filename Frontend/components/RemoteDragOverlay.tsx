@@ -6,7 +6,6 @@ export default function RemoteDragOverlay({ remoteDrags, cards, columns }: { rem
     return (
         <>
             {Array.from(remoteDrags, ([drag, dragData]) => {
-                // Find the item being dragged
                 const card = cards.find(i => i.id === drag);
                 const column = columns.find(c => c.id === drag);
 
@@ -15,16 +14,19 @@ export default function RemoteDragOverlay({ remoteDrags, cards, columns }: { rem
                     key={drag}
                     className="absolute pointer-events-none"
                     style={{
-                    left: `${dragData.x}px`,     // ← absolute positioning
-                    top: `${dragData.y}px`,      // ← absolute positioning
+                    left: `${dragData.x}px`,
+                    top: `${dragData.y}px`,
                     opacity: 0.6,
                     zIndex: 500,
-                    transition: 'transform 50ms linear', // Smooth interpolation
+                    transition: 'transform 50ms linear',
                     }}
                     >
                         {card && (
                             <div className="bg-slate-300 rounded-md my-2 p-2 shadow-md opacity-50">
                                 <CardContent card={card} />
+                                <div className='absolute top-2 left-2 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center bg-black text-white text-sm font-medium'>
+                                    {dragData.userName.charAt(0).toUpperCase()}
+                                </div>
                             </div>
                         )}
 
@@ -37,6 +39,9 @@ export default function RemoteDragOverlay({ remoteDrags, cards, columns }: { rem
                                     </div>
                                     ))}
                                 </ColumnContent>
+                                <div className='absolute top-2 left-2 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center bg-black text-white text-sm font-medium'>
+                                    {dragData.userName.charAt(0).toUpperCase()}
+                                </div>
                             </div>
                         )}
                     </div>
