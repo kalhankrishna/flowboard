@@ -193,13 +193,13 @@ export async function deleteBoard(id: string): Promise<void> {
 }
 
 //Column API calls
-export async function addColumn(boardId: string, title: string, position: string): Promise<Column> {
+export async function addColumn(boardId: string, title: string): Promise<Column> {
   const response = await apiFetch(`${API_BASE_URL}/api/columns`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ boardId, title, position })
+    body: JSON.stringify({ boardId, title })
   });
 
   if (!response.ok) {
@@ -209,11 +209,11 @@ export async function addColumn(boardId: string, title: string, position: string
   return response.json();
 }
 
-export async function updateColumn(id: string, title: string, position: string): Promise<Column> {
+export async function updateColumn(id: string, title: string): Promise<Column> {
   const response = await apiFetch(`${API_BASE_URL}/api/columns/${id}`, {
     method: 'PATCH',
     headers: {'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, position })
+    body: JSON.stringify({ title })
   });
 
   if (!response.ok) {
@@ -250,13 +250,13 @@ export async function reorderColumn(data: ReorderColumn): Promise<void> {
 }
 
 //Card API calls
-export async function addCard(columnId: string, title: string, description: string | null, position: string): Promise<Card> {
+export async function addCard(columnId: string, title: string, description: string | null): Promise<Card> {
   const response = await apiFetch(`${API_BASE_URL}/api/cards`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ columnId, title, description, position })
+    body: JSON.stringify({ columnId, title, description })
   });
 
   if (!response.ok) {
@@ -266,11 +266,11 @@ export async function addCard(columnId: string, title: string, description: stri
   return response.json();
 }
 
-export async function updateCard(id: string, title: string, description: string | null, position: string): Promise<Card> {
+export async function updateCard(id: string, title: string, description: string | null): Promise<Card> {
   const response = await apiFetch(`${API_BASE_URL}/api/cards/${id}`, {
     method: 'PATCH',
     headers: {'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, description, position })
+    body: JSON.stringify({ title, description })
   });
 
   if (!response.ok) {

@@ -163,13 +163,13 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     setCardModal({ open: false, mode: null, columnId: null, cardId: null });
   }
 
-  function handleAddCard(columnId: string, title: string, description: string | null, position: string) {
-    addCardMutation.mutate({ columnId, title, description, position });
+  function handleAddCard(columnId: string, title: string, description: string | null) {
+    addCardMutation.mutate({ columnId, title, description });
     closeCardModal();
   }
 
-  function handleEditCard(cardId: string, title: string, description: string | null, position: string) {
-    updateCardMutation.mutate({ id: cardId, title,  description, position });
+  function handleEditCard(cardId: string, title: string, description: string | null) {
+    updateCardMutation.mutate({ id: cardId, title,  description });
     unlockResource({boardId, resourceId: cardId});
     closeCardModal();
   }
@@ -199,13 +199,13 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     setColumnModal({ open: false, mode: null, columnId: null });
   }
 
-  function handleAddColumn(title: string, position: string) {
-    addColumnMutation.mutate({ boardId, title, position });
+  function handleAddColumn(title: string) {
+    addColumnMutation.mutate({ boardId, title });
     closeColumnModal();
   }
 
-  function handleEditColumn(columnId: string, title: string, position: string) {
-    updateColumnMutation.mutate({ id: columnId, title, position });
+  function handleEditColumn(columnId: string, title: string) {
+    updateColumnMutation.mutate({ id: columnId, title });
     unlockResource({boardId, resourceId: columnId});
     closeColumnModal();
   }

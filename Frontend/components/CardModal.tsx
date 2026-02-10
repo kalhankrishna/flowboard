@@ -17,8 +17,8 @@ export default function CardModal({
   column: Column;
   cardId: string | null;
   existingCard?: Card;
-  onAddCard: (columnId: string, title: string, description: string | null, position: string) => void;
-  onEditCard: (cardId: string, title: string, description: string | null, position: string) => void;
+  onAddCard: (columnId: string, title: string, description: string | null) => void;
+  onEditCard: (cardId: string, title: string, description: string | null) => void;
   closeCardModal: () => void;
   isPending: boolean;
 }) {
@@ -44,15 +44,13 @@ export default function CardModal({
       onAddCard(
         column.id,
         title.trim(),
-        description.trim() || null,
-        (column.cards.length*1.0).toString()
+        description.trim() || null
       );
     } else if (mode === 'edit' && cardId && existingCard) {
       onEditCard(
         cardId,
         title.trim(),
-        description.trim() || null,
-        existingCard.position
+        description.trim() || null
       );
     }
   };

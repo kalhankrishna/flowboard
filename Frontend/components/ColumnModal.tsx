@@ -17,8 +17,8 @@ export default function ColumnModal({
   board: Board;
   columnId: string | null;
   existingColumn?: Column;
-  onAddColumn: (title: string, position: string) => void;
-  onEditColumn: (columnId: string, title: string, position: string) => void;
+  onAddColumn: (title: string) => void;
+  onEditColumn: (columnId: string, title: string) => void;
   closeColumnModal: () => void;
   isPending: boolean;
 }) {
@@ -39,14 +39,12 @@ export default function ColumnModal({
     
     if (mode === 'add') {
       onAddColumn(
-        title.trim(),
-        (board.columns.length*1.0).toString()
+        title.trim()
       );
     } else if (mode === 'edit' && columnId && existingColumn) {
       onEditColumn(
         columnId,
-        title.trim(),
-        existingColumn.position
+        title.trim()
       );
     }
   };

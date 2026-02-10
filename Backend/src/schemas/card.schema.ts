@@ -5,16 +5,14 @@ export const createCardSchema = z.object({
   columnId: z.uuid('Invalid column ID'),
   title: z.string().min(1, 'Card title is required').max(200, 'Card title too long'),
   description: z.string().max(2000, 'Description too long').nullable(),
-  position: z.string().transform(val => new Prisma.Decimal(val)),
 });
 
 export const updateCardSchema = z.object({
   title: z.string().min(1, 'Card title is required').max(200, 'Card title too long').optional(),
   description: z.string().max(2000, 'Description too long').nullish(),
-  position: z.string().transform(val => new Prisma.Decimal(val)).optional(),
   columnId: z.uuid('Invalid column ID').optional(),
 }).refine(
-  data => data.title !== undefined || data.description !== undefined || data.position !== undefined || data.columnId !== undefined,
+  data => data.title !== undefined || data.description !== undefined || data.columnId !== undefined,
   { message: 'At least one field must be provided' }
 );
 

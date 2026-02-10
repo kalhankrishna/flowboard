@@ -6,6 +6,7 @@ import { createColumnSchema, updateColumnSchema, reorderColumnsSchema } from '..
 import { requireAuth } from '../middlewares/requireAuth.js';
 import { getRoleByBoardId, getRoleByColumnId, hasSufficientRole } from '../lib/permission.helper.js';
 import { getNewPos, needsRebalancing, rebalance } from '../lib/position.helper.js';
+import { Prisma } from '@prisma/client';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -13,11 +14,25 @@ router.use(requireAuth);
 // POST /api/columns
 router.post("/", asyncHandler(async(req, res)=>{
     const reqData = createColumnSchema.parse(req.body);
-    const {boardId, title, position} = {
+    const {boardId, title} = {
       boardId: reqData.boardId,
       title: stripHtml(reqData.title).result.trim(),
-      position: reqData.position
     };
+
+    let position: Prisma.Decimal;
+
+    const lastColumnInBoard = await prisma.column.findFirst({
+        where: { boardId },
+        orderBy: { position: 'desc' },
+        select: { position: true }
+    });
+
+    if(!lastColumnInBoard){
+        position = new Prisma.Decimal(1.0);
+    }
+    else {
+        position = lastColumnInBoard.position.plus(1);
+    }
 
     if(!req.user){
         return res.status(401).json({ error: "Authentication required" });
@@ -43,9 +58,8 @@ router.post("/", asyncHandler(async(req, res)=>{
 router.patch("/:id", asyncHandler(async(req, res)=>{
     const id = req.params.id as string;
     const reqData = updateColumnSchema.parse(req.body);
-    const {title, position} = {
+    const {title} = {
       title: stripHtml(reqData.title || "").result.trim(),
-      position: reqData.position
     };
 
     if(!req.user){
@@ -59,7 +73,7 @@ router.patch("/:id", asyncHandler(async(req, res)=>{
     
     const updatedColumn = await prisma.column.update({
         where: { id },
-        data: {title, position},
+        data: {title},
     });
 
     res.json(updatedColumn);

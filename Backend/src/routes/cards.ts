@@ -6,6 +6,7 @@ import { createCardSchema, updateCardSchema, reorderCardsSchema } from '../schem
 import { requireAuth } from '../middlewares/requireAuth.js';
 import { getRoleByCardId, getRoleByColumnId, hasSufficientRole } from '../lib/permission.helper.js';
 import { getNewPos, needsRebalancing, rebalance } from '../lib/position.helper.js';
+import { Prisma } from '@prisma/client';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -13,12 +14,26 @@ router.use(requireAuth);
 // POST /api/cards
 router.post("/", asyncHandler(async (req, res)=>{
     const reqData = createCardSchema.parse(req.body);
-    const {columnId, title, description, position} = {
+    const {columnId, title, description} = {
       columnId: reqData.columnId,
       title: stripHtml(reqData.title).result.trim(),
       description: stripHtml(reqData.description || "").result.trim(),
-      position: reqData.position
     };
+
+    let position: Prisma.Decimal;
+
+    const lastCardInColumn = await prisma.card.findFirst({
+        where: { columnId },
+        orderBy: { position: 'desc' },
+        select: { position: true }
+    });
+
+    if(!lastCardInColumn){
+        position = new Prisma.Decimal(1.0);
+    }
+    else {
+        position = lastCardInColumn.position.plus(1);
+    }
 
     if(!req.user){
         return res.status(401).json({ error: "Authentication required" });
@@ -45,10 +60,9 @@ router.post("/", asyncHandler(async (req, res)=>{
 router.patch("/:id", asyncHandler(async (req, res)=>{
     const id = req.params.id as string;
     const reqData = updateCardSchema.parse(req.body);
-    const {title, description, position, columnId} = {
+    const {title, description, columnId} = {
       title: stripHtml(reqData.title || "").result.trim(),
       description: stripHtml(reqData.description || "").result.trim(),
-      position: reqData.position,
       columnId: reqData.columnId
     };
 
@@ -63,7 +77,7 @@ router.patch("/:id", asyncHandler(async (req, res)=>{
     
     const updatedCard = await prisma.card.update({
         where: { id },
-        data: {title, description : description || "", position, columnId},
+        data: {title, description, columnId},
     });
 
     res.json(updatedCard);

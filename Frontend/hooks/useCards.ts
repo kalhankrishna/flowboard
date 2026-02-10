@@ -12,8 +12,8 @@ export function useCards(boardId: string) {
   
   //ADD CARD
   const addCardMutation = useMutation({
-    mutationFn: (params: { columnId: string; title: string; description: string | null; position: string }) =>
-      addCard(params.columnId, params.title, params.description, params.position),
+    mutationFn: (params: { columnId: string; title: string; description: string | null }) =>
+      addCard(params.columnId, params.title, params.description),
     
     onSuccess: (data, _variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
@@ -30,8 +30,8 @@ export function useCards(boardId: string) {
   
   //UPDATE CARD
   const updateCardMutation = useMutation({
-    mutationFn: (params: { id: string; title: string; description: string | null; position: string }) =>
-      updateCard(params.id, params.title, params.description, params.position),
+    mutationFn: (params: { id: string; title: string; description: string | null }) =>
+      updateCard(params.id, params.title, params.description),
 
     onMutate: async (variables) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.board(boardId) });
@@ -50,7 +50,6 @@ export function useCards(boardId: string) {
                 ...card,
                 title: variables.title,
                 description: variables.description,
-                position: variables.position
               } : card
             )
           }))

@@ -12,8 +12,8 @@ export function useColumns(boardId: string) {
   
   //ADD COLUMN
   const addColumnMutation = useMutation({
-    mutationFn: (params: { boardId: string; title: string; position: string }) =>
-      addColumn(params.boardId, params.title, params.position),
+    mutationFn: (params: { boardId: string; title: string }) =>
+      addColumn(params.boardId, params.title),
     
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
@@ -30,8 +30,8 @@ export function useColumns(boardId: string) {
   
   //UPDATE COLUMN
   const updateColumnMutation = useMutation({
-    mutationFn: (params: { id: string; title: string; position: string }) =>
-      updateColumn(params.id, params.title, params.position),
+    mutationFn: (params: { id: string; title: string }) =>
+      updateColumn(params.id, params.title),
 
     onMutate: async (variables) => {
       await queryClient.cancelQueries({queryKey: queryKeys.board(boardId)});
@@ -45,7 +45,7 @@ export function useColumns(boardId: string) {
           ...old,
           columns: old.columns.map((col: Column) =>
             col.id === variables.id
-              ? { ...col, title: variables.title, position: variables.position }
+              ? { ...col, title: variables.title }
               : col
           )
         };
