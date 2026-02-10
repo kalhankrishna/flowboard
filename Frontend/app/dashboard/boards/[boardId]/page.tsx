@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useId, useMemo} from "react";
+import { notFound } from 'next/navigation'
 import { DndContext, DragCancelEvent, DragEndEvent, DragOverEvent, DragOverlay, DragStartEvent, UniqueIdentifier, pointerWithin } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates} from '@dnd-kit/sortable';
 import DroppableColumn from "@/components/DroppableColumn";
@@ -25,7 +26,7 @@ import { throttle } from "throttle-debounce";
 export default function BoardPage({ params }: { params: Promise<{ boardId: string }> }) {
   const { boardId } = React.use(params);
 
-  const { isInRoom, roomError } = useBoardRoom(boardId);
+  useBoardRoom(boardId);
   const { lockResource, unlockResource } = useLock();
   const lockedResources = useLockListeners(boardId);
   const { dragStartBroadcast, dragOverBroadcast, dragEndBroadcast } = useDragBroadcasts();
@@ -37,7 +38,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
   const queryClient = useQueryClient();
 
   const {getBoardQuery} = useBoard(boardId);
-  const {data: board, isLoading, error} = getBoardQuery;
+  const {data: board, isLoading} = getBoardQuery;
   const {addCardMutation, updateCardMutation, deleteCardMutation, reorderCardsMutation} = useCards(boardId);
   const { addColumnMutation, updateColumnMutation, deleteColumnMutation, reorderColumnsMutation } = useColumns(boardId);
 
@@ -115,12 +116,8 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
     return <div className="p-8">Loading board...</div>;
   }
 
-  if (error) {
-    return <div className="p-8 text-red-500">Error loading board: {error.message}</div>;
-  }
-
   if (!board) {
-    return <div className="p-8">Board not found</div>;
+    notFound();
   }
 
   //Helpers
@@ -438,7 +435,6 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
         {columnModal.open && (
           <ColumnModal 
             mode={columnModal.mode!}
-            board={board}
             columnId={columnModal.columnId}
             existingColumn={columnModal.columnId ? findContainer(columnModal.columnId, 'container') : undefined}
             onAddColumn={handleAddColumn}

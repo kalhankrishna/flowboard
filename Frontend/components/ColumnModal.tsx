@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Board, Column } from '@/types/board';
+import { Column } from '@/types/board';
 
 export default function ColumnModal({
   mode,
-  board,
   columnId,
   existingColumn,
   onAddColumn,
@@ -14,7 +13,6 @@ export default function ColumnModal({
   isPending
 }: {
   mode: 'add' | 'edit';
-  board: Board;
   columnId: string | null;
   existingColumn?: Column;
   onAddColumn: (title: string) => void;

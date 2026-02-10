@@ -7,7 +7,7 @@ import BoardModal from '@/components/BoardModal';
 
 export default function DashboardPage() {
   const { getBoardsQuery, addBoardMutation } = useBoards();
-  const { data, isLoading, error } = getBoardsQuery;
+  const { data, isLoading } = getBoardsQuery;
   
   const [boardModal, setBoardModal] = useState<{ 
     open: boolean; 
@@ -59,14 +59,6 @@ export default function DashboardPage() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-100">
-        <div className="text-red-600">Error loading boards: {error.message}</div>
-      </div>
-    );
-  }
-
   const { ownedBoards, sharedBoards } = data || { ownedBoards: [], sharedBoards: [] };
   const hasNoBoards = ownedBoards.length === 0 && sharedBoards.length === 0;
 
@@ -85,7 +77,7 @@ export default function DashboardPage() {
       
       {hasNoBoards ? (
         <div className="text-center py-12">
-          <p className="text-gray-600 mb-4">You don't have any boards yet.</p>
+          <p className="text-gray-600 mb-4">You don&apos;t have any boards yet.</p>
           <button 
             onClick={() => openAddBoardModal()}
             disabled={addBoardMutation.isPending || updateIsPending || deleteIsPending}

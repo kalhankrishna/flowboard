@@ -133,20 +133,25 @@ export async function logout(): Promise<void> {
 
 //Board API calls
 export async function getBoard(boardId: string): Promise<Board> {
-  const response = await apiFetch(`${API_BASE_URL}/api/boards/${boardId}`);
+  try{
+    const response = await apiFetch(`${API_BASE_URL}/api/boards/${boardId}`);
   
-  if (!response.ok) {
-    throw new Error(`Failed to fetch board: ${response.statusText}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch board");
+    }
+    
+    return response.json();
   }
-  
-  return response.json();
+  catch(error){
+    throw error;
+  }
 }
 
 export async function getBoards(): Promise<CategorizedBoards> {
   const response = await apiFetch(`${API_BASE_URL}/api/boards`);
   
   if (!response.ok) {
-    throw new Error(`Failed to fetch boards: ${response.statusText}`);
+    throw new Error("Failed to fetch boards");
   }
 
   return response.json();
@@ -160,7 +165,7 @@ export async function addBoard(name: string): Promise<Board> {
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to create board: ${response.statusText}`);
+    throw new Error("Failed to create board");
   }
 
   return response.json();
@@ -174,7 +179,7 @@ export async function updateBoard(id: string, name: string): Promise<Board> {
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to update board: ${response.statusText}`);
+    throw new Error("Failed to update board");
   }
 
   return response.json();
@@ -186,7 +191,7 @@ export async function deleteBoard(id: string): Promise<void> {
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to delete board: ${response.statusText}`);
+    throw new Error("Failed to delete board");
   }
 
   return;
@@ -203,7 +208,7 @@ export async function addColumn(boardId: string, title: string): Promise<Column>
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to create column: ${response.statusText}`);
+    throw new Error("Failed to create column");
   }
 
   return response.json();
@@ -217,7 +222,7 @@ export async function updateColumn(id: string, title: string): Promise<Column> {
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to update column: ${response.statusText}`);
+    throw new Error("Failed to update column");
   }
 
   return response.json();
@@ -229,7 +234,7 @@ export async function deleteColumn(id: string): Promise<void> {
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to delete column: ${response.statusText}`);
+    throw new Error("Failed to delete column");
   }
 
   return;
@@ -243,7 +248,7 @@ export async function reorderColumn(data: ReorderColumn): Promise<void> {
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to reorder columns: ${response.statusText}`);
+    throw new Error("Failed to reorder columns");
   }
 
   return response.json();
@@ -260,7 +265,7 @@ export async function addCard(columnId: string, title: string, description: stri
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to create card: ${response.statusText}`);
+    throw new Error("Failed to create card");
   }
 
   return response.json();
@@ -274,7 +279,7 @@ export async function updateCard(id: string, title: string, description: string 
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to update card: ${response.statusText}`);
+    throw new Error("Failed to update card");
   }
 
   return response.json();
@@ -286,7 +291,7 @@ export async function deleteCard(id: string): Promise<void> {
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to delete card: ${response.statusText}`);
+    throw new Error("Failed to delete card");
   }
 
   return;
@@ -300,7 +305,7 @@ export async function reorderCard(data: ReorderCard): Promise<void> {
   });
 
   if(!response.ok) {
-    throw new Error(`Failed to reorder cards: ${response.statusText}`);
+    throw new Error("Failed to reorder cards");
   }
 }
 
@@ -309,7 +314,7 @@ export async function getBoardCollaborators(boardId: string) : Promise<BoardAcce
   const response = await apiFetch(`${API_BASE_URL}/api/boards/${boardId}/access`);
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch collaborators: ${response.statusText}`);
+    throw new Error("Failed to fetch collaborators");
   }
 
   return response.json();
@@ -323,7 +328,7 @@ export async function shareBoard(boardId: string, data: ShareBoardInput): Promis
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to share board: ${response.statusText}`);
+    throw new Error("Failed to share board");
   }
 
   return response.json();
@@ -337,7 +342,7 @@ export async function updateCollaboratorRole(boardId: string, userId: string, da
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to update collaborator role: ${response.statusText}`);
+    throw new Error("Failed to update collaborator role");
   }
 
   return response.json();
@@ -349,7 +354,7 @@ export async function removeCollaborator(boardId: string, userId: string): Promi
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to remove collaborator: ${response.statusText}`);
+    throw new Error("Failed to remove collaborator");
   }
 
   return;

@@ -3,6 +3,7 @@ import { getBoard, getBoards, addBoard, updateBoard, deleteBoard } from '@/lib/a
 import { queryKeys } from '@/lib/queryKeys';
 import { Board, CategorizedBoards } from '@/types/board';
 import toast from 'react-hot-toast';
+import { error } from 'console';
 
 export function useBoard(boardId: string) {
   const queryClient = useQueryClient();
@@ -11,6 +12,12 @@ export function useBoard(boardId: string) {
   const getBoardQuery = useQuery({
     queryKey: queryKeys.board(boardId),
     queryFn: () => getBoard(boardId),
+    throwOnError: (error) => {
+      if (error instanceof Error && error.message === "Failed to fetch board") {
+        return false;
+      }
+      return true;
+    },
     enabled: !!boardId,
   });
 
@@ -118,6 +125,7 @@ export function useBoards(){
   const getBoardsQuery = useQuery({
     queryKey: queryKeys.boards(),
     queryFn: () => getBoards(),
+    throwOnError: true,
   });
 
   //Add Board

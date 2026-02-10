@@ -14,8 +14,9 @@ export default function RemoteDragOverlay({ remoteDrags, cards, columns }: { rem
                     key={drag}
                     className="absolute pointer-events-none"
                     style={{
-                    left: `${dragData.x}px`,
-                    top: `${dragData.y}px`,
+                    transform: `translate(${dragData.x}px, ${dragData.y}px)`,
+                    top: 0,
+                    left: 0,
                     opacity: 0.6,
                     zIndex: 500,
                     transition: 'transform 50ms linear',

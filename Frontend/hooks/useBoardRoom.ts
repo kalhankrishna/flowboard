@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { useSocket } from '@/components/SocketProvider';
 import { BoardRole } from '@/types/share';
 
@@ -17,8 +18,6 @@ type RoomJoinResponse = SuccessResponse | ErrorResponse;
 
 export const useBoardRoom = (boardId: string | null) => {
   const { socket, isConnected } = useSocket();
-  const [isInRoom, setIsInRoom] = useState(false);
-  const [roomError, setRoomError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!socket || !isConnected || !boardId) return;
@@ -28,12 +27,8 @@ export const useBoardRoom = (boardId: string | null) => {
     socket.emit('BOARD_JOIN', boardId, (response: RoomJoinResponse) => {
       if(cancelled) return;
 
-      if (response.success) {
-        setIsInRoom(true);
-        setRoomError(null);
-      } else {
-        setIsInRoom(false);
-        setRoomError(response.error);
+      if (!response.success) {
+        toast.error("Failed to join board room");
       }
     });
 
@@ -42,13 +37,6 @@ export const useBoardRoom = (boardId: string | null) => {
       if (socket.connected) {
         socket.emit('BOARD_LEAVE', boardId);
       }
-      setRoomError(null);
-      setIsInRoom(false);
     };
   }, [socket, isConnected, boardId]);
-
-  return {
-    isInRoom,
-    roomError,
-  };
 };

@@ -15,7 +15,7 @@ export function useCards(boardId: string) {
     mutationFn: (params: { columnId: string; title: string; description: string | null }) =>
       addCard(params.columnId, params.title, params.description),
     
-    onSuccess: (data, _variables) => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
       toast.success('Card added successfully');
       addCardBroadcast({ boardId, card: data });
