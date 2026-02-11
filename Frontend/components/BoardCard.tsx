@@ -6,6 +6,7 @@ import { useBoard, useSharing } from '@/hooks';
 import { useEffect } from 'react';
 import { BoardRole } from '@/types/share';
 import { useAuthStore } from '@/store/authStore';
+import { Pencil, Trash2 } from 'lucide-react';
 
 type BoardCardProps = Board & {
     _count?: {columns: number};
@@ -56,11 +57,11 @@ export default function BoardCard({ board, onEditBoard, isAddingBoard, onDeleteI
   return (
     <Link 
       href={`/dashboard/boards/${board.id}`}
-      className="group relative block p-6 bg-white rounded-lg shadow hover:shadow-lg transition border border-gray-200 hover:border-blue-500"
+      className="group relative block p-6 bg-white rounded-lg hover:shadow-lg transition border border-gray-300"
     >
-      <h2 className="text-xl font-semibold mb-2 text-gray-900">{board.name}</h2>
+      <h2 className="text-xl font-heading font-semibold mb-2 text-gray-900">{board.name}</h2>
       
-      <div className="text-sm text-gray-600 space-y-1">
+      <div className="text-sm text-gray-400 space-y-1">
         {board._count && (
           <p>{board._count.columns} column{board._count.columns !== 1 ? 's' : ''}</p>
         )}
@@ -68,22 +69,22 @@ export default function BoardCard({ board, onEditBoard, isAddingBoard, onDeleteI
       </div>
       {
         isOwner && (
-          <div className='absolute top-2 right-2 flex justify-between items-center gap-x-2'>
+          <div className='absolute top-12 right-6 flex justify-between items-center gap-x-2'>
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={handleEditClick}
               disabled={deleteBoardMutation.isPending || isAddingBoard || isUpdatingBoard}
-              className="opacity-0 group-hover:opacity-100 bg-blue-500 text-white px-2 py-1 rounded text-sm transition"
+              className="opacity-0 group-hover:opacity-100 hover:cursor-pointer text-gray-400 px-2 py-2 rounded-lg text-sm hover:bg-cyan-100 hover:text-cyan-400 transition"
             >
-              Edit
+              <Pencil />
             </button>
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={handleDelete}
               disabled={deleteBoardMutation.isPending || isAddingBoard || isUpdatingBoard}
-              className="opacity-0 group-hover:opacity-100 bg-red-500 text-white px-2 py-1 rounded text-sm transition"
+              className="opacity-0 group-hover:opacity-100 hover:cursor-pointer text-gray-400 px-2 py-2 rounded-lg text-sm hover:bg-red-100 hover:text-red-400 transition"
             >
-              Delete
+              <Trash2 />
             </button>
           </div>
         )

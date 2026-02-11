@@ -51,7 +51,7 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-300 bg-linear-to-br from-slate-50 to-stone-100 border-b-2 flex justify-between px-4 py-4 shadow-xs">
-      <Link href="/" className='flex items-center space-x-2'>
+      <Link href="/" className='flex items-center space-x-2 pl-4'>
         <span className='inline-block'><Workflow className="text-cyan-600 size-7" /></span>
         <span className='text-3xl font-bold font-heading text-gray-700'>Flowboard</span>
       </Link>

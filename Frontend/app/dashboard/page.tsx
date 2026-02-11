@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useBoards } from '@/hooks';
 import BoardCard from '@/components/BoardCard';
 import BoardModal from '@/components/BoardModal';
+import {Plus} from 'lucide-react';
 
 export default function DashboardPage() {
   const { getBoardsQuery, addBoardMutation } = useBoards();
@@ -63,15 +64,19 @@ export default function DashboardPage() {
   const hasNoBoards = ownedBoards.length === 0 && sharedBoards.length === 0;
 
   return (
-    <div className='pl-4 pr-8 py-4'>
-      <div className="flex justify-between">
-        <h1 className="text-3xl font-bold">My Boards</h1>
+    <div className='pl-8 pr-8'>
+      <div className="flex items-center justify-between mt-6 mb-8">
+        <div className='flex flex-col items-start'>
+          <h1 className="text-3xl font-bold font-heading text-gray-700">Your Boards</h1>
+          <p className="text-sm text-gray-400">Create, manage, and collaborate on boards.</p>
+        </div>
         <button 
           onClick={() => openAddBoardModal()}
           disabled={addBoardMutation.isPending || updateIsPending || deleteIsPending}
-          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+          className="bg-cyan-500 text-white flex items-center justify-center gap-2 px-2 py-2 rounded-md hover:bg-cyan-400 hover:cursor-pointer transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Create Board
+          <span className='inline-block'><Plus /></span>
+          New Board
         </button>
       </div>
       

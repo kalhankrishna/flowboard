@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import { useAuthStore } from '@/store/authStore';
 
 export default function DashboardLayout({
@@ -44,7 +43,6 @@ export default function DashboardLayout({
       <main className="grow">
         {children}
       </main>
-      <Footer />
     </div>
   );
 }

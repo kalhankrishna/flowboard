@@ -5,7 +5,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col justify-between bg-linear-to-br from-slate-50 to-stone-100">
       <header className='sticky top-0 border-b-2 flex justify-between px-4 py-4 shadow-xs'>
-        <div className='flex items-center space-x-2'>
+        <div className='flex items-center space-x-2 pl-4'>
           <span className='inline-block'><Workflow className="text-cyan-600 size-7" /></span>
           <span className='text-3xl font-bold font-heading text-gray-700'>Flowboard</span>
         </div>
