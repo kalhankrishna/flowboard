@@ -60,7 +60,7 @@ export default function Navbar() {
         <div className="relative pr-4">
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex items-center gap-2 font-sans font-semibold text-gray-700 hover:text-white hover:bg-cyan-400 hover:cursor-pointer px-4 py-2 rounded-lg transition"
+            className="flex items-center gap-2 font-sans font-semibold border text-cyan-500 hover:text-white hover:bg-cyan-400 hover:cursor-pointer px-4 py-2 rounded-lg transition"
           >
             <span>{user.name}</span>
             <svg
