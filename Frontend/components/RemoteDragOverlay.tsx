@@ -18,7 +18,7 @@ export default function RemoteDragOverlay({ remoteDrags, cards, columns }: { rem
                     top: 0,
                     left: 0,
                     opacity: 0.6,
-                    zIndex: 500,
+                    zIndex: 200,
                     transition: 'transform 50ms linear',
                     }}
                     >

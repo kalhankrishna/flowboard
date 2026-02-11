@@ -16,7 +16,7 @@ const spaceGrotesk = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
-  title: "Flowboard - Organize Your Workflow",
+  title: "Flowboard",
   description: "Flowboard helps teams organize, track, and manage their work seamlessly. Create boards, add tasks, and collaborate in real-time to boost productivity and stay on top of your projects.",
 };
 

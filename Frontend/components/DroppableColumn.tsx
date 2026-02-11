@@ -36,6 +36,7 @@ export default function DroppableColumn({
     transition,
     opacity: isDragging ? 0.5 : 1,
     cursor: isLocked ? 'not-allowed' : 'grab',
+    zIndex: 100,
   };
 
   const handleAddCardClick = () => {

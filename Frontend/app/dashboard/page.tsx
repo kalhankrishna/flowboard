@@ -63,8 +63,8 @@ export default function DashboardPage() {
   const hasNoBoards = ownedBoards.length === 0 && sharedBoards.length === 0;
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className='pl-4 pr-8 py-4'>
+      <div className="flex justify-between">
         <h1 className="text-3xl font-bold">My Boards</h1>
         <button 
           onClick={() => openAddBoardModal()}

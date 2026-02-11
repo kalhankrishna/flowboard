@@ -4,14 +4,14 @@ import { Workflow, LayoutList, LogIn } from 'lucide-react';
 export default function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col justify-between bg-linear-to-br from-slate-50 to-stone-100">
-      <header className='sticky border-b-2 flex justify-between px-4 py-4'>
+      <header className='sticky top-0 border-b-2 flex justify-between px-4 py-4 shadow-xs'>
         <div className='flex items-center space-x-2'>
           <span className='inline-block'><Workflow className="text-cyan-600 size-7" /></span>
           <span className='text-3xl font-bold font-heading text-gray-700'>Flowboard</span>
         </div>
         <div className='flex items-center space-x-4 pr-4'>
           <Link href="/login" className="font-semibold text-cyan-500 border-1 rounded-lg px-4 py-2 hover:text-white hover:bg-cyan-500 transition-all">Log in</Link>
-          <Link href="/register" className="font-semibold text-white px-4 py-2 rounded-lg bg-linear-to-br bg-cyan-500 hover:bg-cyan-400 transition-colors">Sign up</Link>
+          <Link href="/register" className="font-semibold text-white px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 transition-colors">Sign up</Link>
         </div>
       </header>
 
@@ -44,7 +44,7 @@ export default function LandingPage() {
         </div>
       </main>
 
-      <footer className='sticky border-t-2 px-4 py-4'>
+      <footer className='sticky bottom-0 border-t-2 px-4 py-4 shadow-xs'>
         <p className='text-sm text-gray-500 text-center'>&copy; {new Date().getFullYear()} Flowboard. All rights reserved.</p>
       </footer>
     </div>

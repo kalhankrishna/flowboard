@@ -32,6 +32,7 @@ export default function SortableCard({
     transition,
     opacity: (isDragging || isLocked) ? 0.5 : 1,
     cursor: isLocked ? 'not-allowed' : 'grab',
+    zIndex: 100,
   };
 
   const handleEditClick = () => {
