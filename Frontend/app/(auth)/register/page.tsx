@@ -94,7 +94,7 @@ export default function RegisterPage() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:ring-2 focus:ring-cyan-600 placeholder:text-gray-400"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:ring-1 focus:ring-cyan-600 placeholder:text-gray-400"
               placeholder="Your full name"
               disabled={isLoading}
               autoComplete="name"
@@ -111,7 +111,7 @@ export default function RegisterPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:ring-2 focus:ring-cyan-600 placeholder:text-gray-400"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:ring-1 focus:ring-cyan-600 placeholder:text-gray-400"
               placeholder="you@example.com"
               disabled={isLoading}
               autoComplete="email"
@@ -128,7 +128,7 @@ export default function RegisterPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:ring-2 focus:ring-cyan-600 placeholder:text-gray-400"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:ring-1 focus:ring-cyan-600 placeholder:text-gray-400"
               placeholder="Min 12 characters"
               disabled={isLoading}
               autoComplete="new-password"
@@ -146,7 +146,7 @@ export default function RegisterPage() {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:ring-2 focus:ring-cyan-600 placeholder:text-gray-400"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:ring-1 focus:ring-cyan-600 placeholder:text-gray-400"
               placeholder="Re-enter password"
               disabled={isLoading}
               autoComplete="new-password"

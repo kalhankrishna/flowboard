@@ -50,7 +50,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-300 bg-linear-to-br from-slate-50 to-stone-100 border-b-2 flex justify-between px-4 py-4 shadow-xs">
+    <nav className="sticky top-0 z-500 bg-linear-to-br from-slate-50 to-stone-100 border-b-2 flex justify-between px-4 py-4 shadow-xs">
       <Link href="/" className='flex items-center space-x-2 pl-4'>
         <span className='inline-block'><Workflow className="text-cyan-600 size-7" /></span>
         <span className='text-3xl font-bold font-heading text-gray-700'>Flowboard</span>
@@ -75,7 +75,7 @@ export default function Navbar() {
 
           {/* Dropdown Menu */}
           {isMenuOpen && (
-            <div className="absolute right-0 z-300 mt-2 px-1 w-48 bg-white rounded-md shadow-lg border border-gray-200">
+            <div className="absolute right-0 z-500 mt-2 px-1 w-48 bg-white rounded-md shadow-lg border border-gray-200">
               <div className="px-4 py-2 border-b border-gray-200">
                 <p className="text-sm font-medium text-gray-700">{user.name}</p>
                 <p className="text-xs text-gray-500">{user.email}</p>
