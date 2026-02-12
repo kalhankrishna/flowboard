@@ -68,8 +68,10 @@ export default function BoardModal({
         <h2 className="text-sm text-gray-400 mb-4">{mode === 'add' ? 'Give your board a name to get started' : 'Change the name of your board'}</h2>
         
         <form onSubmit={handleSubmit}>
+          <label htmlFor="new-board-title" className="block text-sm font-medium text-gray-600 mb-1">Board Name</label>
           <input
             type="text"
+            id="new-board-title"
             value={boardName}
             onChange={(e) => setBoardName(e.target.value)}
             placeholder="e.g. Project Roadmap"

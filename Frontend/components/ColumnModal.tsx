@@ -51,7 +51,7 @@ export default function ColumnModal({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-200">
       <div className="relative bg-white p-6 rounded-lg max-w-md w-full z-300">
-        <div className='flex items-center justify-between mb-4'>
+        <div className='flex items-center justify-between'>
           <h2 className="text-2xl font-semibold font-heading text-gray-700">
             {mode === 'add' ? 'Add New Column' : 'Edit Column'}
           </h2>
@@ -62,10 +62,13 @@ export default function ColumnModal({
             <X className='size-6'/>
           </button>
         </div>
+        <h2 className="text-md text-gray-400 mb-4">{mode === 'add' ? 'Create a new column for the board' : 'Change the name of this column'}</h2>
         
         <form onSubmit={handleSubmit}>
+          <label htmlFor="new-column-title" className="block text-sm font-medium text-gray-600 mb-1">Column Name</label>
           <input
             type="text"
+            id="new-column-title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Column Title"

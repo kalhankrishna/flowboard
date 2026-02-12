@@ -59,7 +59,7 @@ export default function CardModal({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-200">
       <div className="relative bg-white p-6 rounded-lg max-w-md w-full z-300">
-        <div className='flex items-center justify-between mb-4'>
+        <div className='flex items-center justify-between'>
           <h2 className="text-2xl font-semibold font-heading text-gray-700">
             {mode === 'add' ? 'Add New Card' : 'Edit Card'}
           </h2>
@@ -70,9 +70,13 @@ export default function CardModal({
             <X className='size-6'/>
           </button>
         </div>
+        <h2 className="text-md text-gray-400 mb-4">{mode === 'add' ? 'Create a new card for this column' : 'Update the card details'}</h2>
+        
         <form onSubmit={handleSubmit}>
+          <label htmlFor="new-card-title" className="block text-sm font-medium text-gray-600 mb-1">Card Name</label>
           <input
             type="text"
+            id="new-card-title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Card Title"
@@ -80,10 +84,12 @@ export default function CardModal({
             autoFocus
           />
           
+          <label htmlFor="new-card-description" className="block text-sm font-medium text-gray-600 mb-1">Card Description</label>
           <textarea
+            id="new-card-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Card Description"
+            placeholder="Add a description..."
             className="mb-2 border border-gray-300 text-gray-700 p-2 w-full rounded focus:outline-0 focus:ring-1 focus:ring-cyan-400 placeholder:text-gray-300 transition"
           />
           
