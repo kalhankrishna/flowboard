@@ -76,7 +76,7 @@ export default function BoardCard({ board, onEditBoard, isAddingBoard, onDeleteI
               disabled={deleteBoardMutation.isPending || isAddingBoard || isUpdatingBoard}
               className="opacity-0 group-hover:opacity-100 hover:cursor-pointer text-gray-400 px-2 py-2 rounded-lg text-sm hover:bg-cyan-100 hover:text-cyan-400 transition"
             >
-              <Pencil />
+              <Pencil className='size-5' />
             </button>
             <button
               onPointerDown={(e) => e.stopPropagation()}
@@ -84,7 +84,7 @@ export default function BoardCard({ board, onEditBoard, isAddingBoard, onDeleteI
               disabled={deleteBoardMutation.isPending || isAddingBoard || isUpdatingBoard}
               className="opacity-0 group-hover:opacity-100 hover:cursor-pointer text-gray-400 px-2 py-2 rounded-lg text-sm hover:bg-red-100 hover:text-red-400 transition"
             >
-              <Trash2 />
+              <Trash2 className='size-5' />
             </button>
           </div>
         )
