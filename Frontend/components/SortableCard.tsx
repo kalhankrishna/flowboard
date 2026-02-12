@@ -2,6 +2,7 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Pencil, Trash2 } from 'lucide-react';
 import CardContent from './CardContent';
 import { Card } from '@/types/board';
 
@@ -49,31 +50,31 @@ export default function SortableCard({
       style={style}
       {...attributes}
       {...listeners}
-      className="group/card relative p-2 bg-slate-300 rounded-md my-2 shadow-md"
+      className="group/card relative p-2 bg-linear-to-br from-slate-50 to-stone-100 rounded-md my-2 border border-gray-300 hover:shadow-md"
     >
       <CardContent card={card} />
       {isLocked && lockedBy && (
-        <div className='absolute top-2 left-2 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center bg-black text-white text-sm font-medium'>
+        <div title={lockedBy} className='absolute top-2 right-24 w-6 h-6 rounded-full flex items-center justify-center bg-cyan-500 text-white text-sm font-medium'>
           {lockedBy.charAt(0).toUpperCase()}
         </div>
       )}
       {canEdit && (
-        <div className='absolute top-2 right-2 flex items-center justify-between gap-x-2 opacity-0 group-hover/card:opacity-100'>
+        <div className='absolute top-1 right-2 flex items-center justify-between gap-x-2 opacity-0 group-hover/card:opacity-100'>
           <button
             onPointerDown={(e) => e.stopPropagation()}
             disabled={isPending}
             onClick={handleEditClick}
-            className="bg-blue-500 text-white px-2 py-1 rounded text-sm transition"
+            className="text-gray-400 p-2 rounded-lg hover:bg-cyan-100 hover:text-cyan-400 hover:cursor-pointer transition"
           >
-            Edit
+            <Pencil className="size-4" />
           </button>
           <button
             onPointerDown={(e) => e.stopPropagation()}
             disabled={isPending}
             onClick={handleDeleteClick}
-            className="bg-red-500 text-white px-2 py-1 rounded text-sm transition"
+            className="text-gray-400 p-2 rounded-lg hover:bg-red-100 hover:text-red-400 hover:cursor-pointer transition"
           >
-            Delete
+            <Trash2 className="size-4" />
           </button>
         </div>
       )}

@@ -393,7 +393,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
             {isOwner && (
               <button
                 onClick={() => setShareModalOpen(true)}
-                className="flex items-center justify-center gap-2 border-2 text-cyan-500 px-4 py-2 rounded-md hover:bg-cyan-500 hover:text-white hover:cursor-pointer transition"
+                className="flex items-center justify-center gap-2 border text-cyan-500 px-4 py-2 rounded-md hover:bg-cyan-500 hover:text-white hover:cursor-pointer transition"
               >
                 <span className="inline-block">
                   <Share2 className="size-4"/>
@@ -403,7 +403,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
             )}
             {
               canEdit && (
-                <button onClick={openAddColumnModal} disabled={isPendingAnyMutation} className="flex items-center justify-center gap-2 bg-cyan-500 text-white px-4 py-2 hover:bg-cyan-400 hover:cursor-pointer transition rounded-md">
+                <button onClick={openAddColumnModal} disabled={isPendingAnyMutation} className="flex items-center justify-center gap-2 border border-cyan-500 bg-cyan-500 text-white px-4 py-2 hover:bg-cyan-400 hover:border-cyan-400 hover:cursor-pointer transition rounded-md">
                   <span className="inline-block">
                     <Plus className="size-4"/>
                   </span>
@@ -471,16 +471,16 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
       <RemoteDragOverlay remoteDrags={remoteDrags} cards={remoteDraggedCards} columns={remoteDraggedColumns} />
       <DragOverlay>
         {activeId && findCard(activeId.toString()) && (
-          <div className="bg-slate-300 rounded-md my-2 p-2 shadow-md opacity-50">
+          <div className="bg-slate-100 rounded-md my-2 p-2 border border-gray-300 shadow-md opacity-50">
             <CardContent card={findCard(activeId.toString())!} />
           </div>
         )}
 
         {activeId && findContainer(activeId.toString(), 'container') && (
-          <div className="bg-gray-100 p-4 rounded-lg w-full min-h-140 shadow-md opacity-50">
+          <div className="bg-slate-100 p-4 rounded-lg w-full min-h-110 shadow-md opacity-50 border">
             <ColumnContent column={findContainer(activeId.toString(), 'container')!}>
               {findContainer(activeId.toString(), 'container')?.cards.map(card => (
-                <div key={card.id} className="bg-slate-300 rounded-md my-2 p-2 shadow-md">
+                <div key={card.id} className="bg-gray-100 rounded-md my-2 p-2 border border-gray-300 shadow-md">
                   <CardContent card={card} />
                 </div>
               ))}

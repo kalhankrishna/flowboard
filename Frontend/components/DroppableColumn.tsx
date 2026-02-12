@@ -65,7 +65,7 @@ export default function DroppableColumn({
         </div>
       )}
       {canEdit && (
-        <div className=" transition">
+        <div className="opacity-0 group-hover/column:opacity-100 transition">
           <button onPointerDown={(e) => e.stopPropagation()} disabled={isPending} onClick={handleAddCardClick} className="flex items-center justify-center gap-2 mt-4 bg-cyan-500 text-white p-2 rounded-lg w-full hover:bg-cyan-400 hover:cursor-pointer transition">
             <span className="inline-block">
               <Plus className="size-4" />

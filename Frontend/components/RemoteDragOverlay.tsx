@@ -23,24 +23,24 @@ export default function RemoteDragOverlay({ remoteDrags, cards, columns }: { rem
                     }}
                     >
                         {card && (
-                            <div className="bg-slate-300 rounded-md my-2 p-2 shadow-md opacity-50">
+                            <div className="bg-slate-100 min-w-50 rounded-md my-2 p-2 border border-gray-300 shadow-md opacity-50">
                                 <CardContent card={card} />
-                                <div className='absolute top-2 left-2 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center bg-black text-white text-sm font-medium'>
+                                <div className='absolute top-4 right-4 w-6 h-6 rounded-full flex items-center justify-center bg-cyan-500 text-white text-sm font-medium'>
                                     {dragData.userName.charAt(0).toUpperCase()}
                                 </div>
                             </div>
                         )}
 
                         {column && (
-                            <div className="bg-gray-100 p-4 rounded-lg w-full min-h-140 shadow-md opacity-50">
+                            <div className="bg-slate-100 p-4 rounded-lg w-full min-h-110 shadow-md opacity-50 border">
                                 <ColumnContent column={column}>
                                     {column.cards.map(card => (
-                                    <div key={card.id} className="bg-slate-300 rounded-md my-2 p-2 shadow-md">
+                                    <div key={card.id} className="bg-gray-100 rounded-md my-2 p-2 border border-gray-300 shadow-md">
                                         <CardContent card={card} />
                                     </div>
                                     ))}
                                 </ColumnContent>
-                                <div className='absolute top-2 left-2 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center bg-black text-white text-sm font-medium'>
+                                <div className='absolute top-3 right-4 w-6 h-6 rounded-full flex items-center justify-center bg-cyan-500 text-white text-sm font-medium'>
                                     {dragData.userName.charAt(0).toUpperCase()}
                                 </div>
                             </div>
