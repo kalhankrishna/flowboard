@@ -60,7 +60,7 @@ export default function Navbar() {
         <div className="relative pr-4">
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex items-center gap-2 font-sans font-semibold border text-cyan-500 hover:text-white hover:bg-cyan-400 hover:cursor-pointer px-4 py-2 rounded-lg transition"
+            className="flex items-center gap-2 font-sans font-semibold border text-cyan-500 hover:text-white hover:bg-cyan-500 hover:cursor-pointer px-4 py-2 rounded-lg transition"
           >
             <span>{user.name}</span>
             <svg
@@ -84,7 +84,7 @@ export default function Navbar() {
               <button
                 onClick={handleLogout}
                 disabled={isLoggingOut}
-                className="flex items-center gap-2 w-full text-left my-1 px-4 py-2 text-sm text-gray-700 rounded-lg hover:text-white hover:bg-cyan-400 hover:cursor-pointer disabled:opacity-50 transition"
+                className="flex items-center gap-2 w-full text-left my-1 px-4 py-2 text-sm text-gray-700 rounded-lg hover:text-white hover:bg-cyan-500 hover:cursor-pointer disabled:opacity-50 transition"
               >
                 <span className='inline-block'><LogOut/></span>
                 {isLoggingOut ? 'Signing out...' : 'Sign out'}

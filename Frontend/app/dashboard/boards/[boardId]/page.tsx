@@ -2,6 +2,7 @@
 
 import { useState, useId, useMemo} from "react";
 import { notFound } from 'next/navigation'
+import { Share2, Plus, ArrowLeft } from 'lucide-react';
 import { DndContext, DragCancelEvent, DragEndEvent, DragOverEvent, DragOverlay, DragStartEvent, UniqueIdentifier, pointerWithin } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates} from '@dnd-kit/sortable';
 import DroppableColumn from "@/components/DroppableColumn";
@@ -22,6 +23,7 @@ import { useAuthStore } from '@/store/authStore';
 import { BoardRole } from '@/types/share';
 import { PointerSensor, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { throttle } from "throttle-debounce";
+import Link from "next/link";
 
 export default function BoardPage({ params }: { params: Promise<{ boardId: string }> }) {
   const { boardId } = React.use(params);
@@ -378,25 +380,41 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
 
   return (
     <DndContext id={id} sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel} collisionDetection={pointerWithin}>
-      <div className="p-8">
-        <h1 className="text-2xl font-bold mb-2">Kanban Board</h1>
-        <div className="flex justify-end">
-          {isOwner && (
-            <button
-              onClick={() => setShareModalOpen(true)}
-              className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
-            >
-              Share
-            </button>
-          )}
-          {
-            canEdit && (
-              <button onClick={openAddColumnModal} disabled={isPendingAnyMutation} className="mb-4 bg-green-500 text-white p-2 rounded w-full max-w-40">Add Column</button>
-            )
-          }
-          <PresenceIndicator boardId={boardId} />
+      <div>
+        <div className="flex items-center justify-between border-b border-gray-300 px-8 py-4">
+          <div className="flex items-center justify-center gap-2">
+            <Link href="/dashboard" className="text-cyan-500 px-2 py-2 rounded-md hover:text-white hover:bg-cyan-500 transition">
+              <ArrowLeft className="size-4"/>
+            </Link>
+            <h1 className="text-2xl text-gray-700 font-bold font-heading">{board.name}</h1>
+          </div>
+          <div className="flex items-center justify-end gap-2">
+            <PresenceIndicator boardId={boardId} />
+            {isOwner && (
+              <button
+                onClick={() => setShareModalOpen(true)}
+                className="flex items-center justify-center gap-2 border-2 text-cyan-500 px-4 py-2 rounded-md hover:bg-cyan-500 hover:text-white hover:cursor-pointer transition"
+              >
+                <span className="inline-block">
+                  <Share2 className="size-4"/>
+                </span>
+                Share
+              </button>
+            )}
+            {
+              canEdit && (
+                <button onClick={openAddColumnModal} disabled={isPendingAnyMutation} className="flex items-center justify-center gap-2 bg-cyan-500 text-white px-4 py-2 hover:bg-cyan-400 hover:cursor-pointer transition rounded-md">
+                  <span className="inline-block">
+                    <Plus className="size-4"/>
+                  </span>
+                  Add Column
+                </button>
+              )
+            }
+          </div>
         </div>
-        <div className="flex gap-4 justify-between">
+        
+        <div className="flex gap-4 justify-between px-8 py-6 overflow-x-auto">
           <SortableContext items={board.columns.map(column => column.id)} strategy={horizontalListSortingStrategy}>
             {
               board.columns.map(column => (

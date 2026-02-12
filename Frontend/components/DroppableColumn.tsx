@@ -53,7 +53,7 @@ export default function DroppableColumn({
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="group relative bg-gray-100 w-full p-4 rounded-lg shadow-md">
-      <div className="w-full min-h-100">
+      <div className="w-full min-h-90">
         <ColumnContent column={column}>
           {children}
         </ColumnContent>
