@@ -9,7 +9,9 @@ export default function ColumnContent({
 }) {
   return (
     <>
-      <h2 className="font-semibold mb-4 text-black">{column.title}</h2>
+      <div className='flex justify-start border-b border-gray-400 mb-4 pb-4'>
+        <h2 className="font-semibold text-gray-700">{column.title}</h2>
+      </div>
       {children}
     </>
   );

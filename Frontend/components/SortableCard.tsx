@@ -49,7 +49,7 @@ export default function SortableCard({
       style={style}
       {...attributes}
       {...listeners}
-      className="group relative p-2 bg-slate-300 rounded-md my-2 shadow-md"
+      className="group/card relative p-2 bg-slate-300 rounded-md my-2 shadow-md"
     >
       <CardContent card={card} />
       {isLocked && lockedBy && (
@@ -58,12 +58,12 @@ export default function SortableCard({
         </div>
       )}
       {canEdit && (
-        <div className='absolute top-2 right-2 flex items-center justify-between gap-x-2'>
+        <div className='absolute top-2 right-2 flex items-center justify-between gap-x-2 opacity-0 group-hover/card:opacity-100'>
           <button
             onPointerDown={(e) => e.stopPropagation()}
             disabled={isPending}
             onClick={handleEditClick}
-            className="opacity-0 group-hover:opacity-100 bg-blue-500 text-white px-2 py-1 rounded text-sm transition"
+            className="bg-blue-500 text-white px-2 py-1 rounded text-sm transition"
           >
             Edit
           </button>
@@ -71,7 +71,7 @@ export default function SortableCard({
             onPointerDown={(e) => e.stopPropagation()}
             disabled={isPending}
             onClick={handleDeleteClick}
-            className="opacity-0 group-hover:opacity-100 bg-red-500 text-white px-2 py-1 rounded text-sm transition"
+            className="bg-red-500 text-white px-2 py-1 rounded text-sm transition"
           >
             Delete
           </button>

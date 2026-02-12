@@ -2,6 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from '@dnd-kit/utilities';
+import { Pencil, Trash2, Plus } from 'lucide-react';
 import ColumnContent from "./ColumnContent";
 import { Column } from '@/types/board';
 
@@ -52,7 +53,7 @@ export default function DroppableColumn({
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="group relative bg-gray-100 w-full p-4 rounded-lg shadow-md">
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="group/column relative border bg-zinc-100 w-full p-4 rounded-lg shadow-md">
       <div className="w-full min-h-90">
         <ColumnContent column={column}>
           {children}
@@ -64,11 +65,20 @@ export default function DroppableColumn({
         </div>
       )}
       {canEdit && (
-        <div>
-          <button onPointerDown={(e) => e.stopPropagation()} disabled={isPending} onClick={handleAddCardClick} className="opacity-0 group-hover:opacity-100 mt-4 bg-green-500 text-white p-2 rounded w-full">Add Card</button>
-          <div className="flex justify-between gap-12 opacity-0 group-hover:opacity-100 transition">
-            <button onPointerDown={(e) => e.stopPropagation()} disabled={isPending} onClick={handleEditClick} className="mt-4 bg-blue-500 text-white p-2 rounded w-full">Edit Column</button>
-            <button onPointerDown={(e) => e.stopPropagation()} disabled={isPending} onClick={handleDeleteClick} className="mt-4 bg-red-500 text-white p-2 rounded w-full">Delete Column</button>
+        <div className="opacity-0 group-hover/column:opacity-100 transition">
+          <button onPointerDown={(e) => e.stopPropagation()} disabled={isPending} onClick={handleAddCardClick} className="flex items-center justify-center gap-2 mt-4 bg-cyan-500 text-white p-2 rounded-lg w-full hover:bg-cyan-400 hover:cursor-pointer transition">
+            <span className="inline-block">
+              <Plus className="size-4" />
+            </span>
+            Add Card
+          </button>
+          <div className="absolute top-2 right-4 flex items-center justify-center gap-2">
+            <button onPointerDown={(e) => e.stopPropagation()} disabled={isPending} onClick={handleEditClick} className="text-gray-400 p-2 rounded-lg hover:bg-cyan-100 hover:text-cyan-400 hover:cursor-pointer transition">
+              <Pencil className="size-4" />
+            </button>
+            <button onPointerDown={(e) => e.stopPropagation()} disabled={isPending} onClick={handleDeleteClick} className="text-gray-400 p-2 rounded-lg hover:bg-red-100 hover:text-red-400 hover:cursor-pointer transition">
+              <Trash2 className="size-4" />
+            </button>
           </div>
         </div>
       )}
