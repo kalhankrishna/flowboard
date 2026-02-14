@@ -95,6 +95,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'FlowBoard API is running' });
 });
 
+//Find the number of proxies
+app.get('/ip', (request, response) => {
+	response.send(request.ip);
+});
+
 //Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/boards', boardRoutes);
