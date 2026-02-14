@@ -22,6 +22,7 @@ dotenv.config();
 validateEnv();
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
 
 const httpServer = createServer(app);
@@ -93,11 +94,6 @@ app.use('/api/', apiLimiter)
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'FlowBoard API is running' });
-});
-
-//Find the number of proxies
-app.get('/ip', (request, response) => {
-	response.send(request.ip);
 });
 
 //Routes
