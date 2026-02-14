@@ -1,4 +1,4 @@
-import { prisma } from "../lib/prisma";
+import { prisma } from "../lib/prisma.js";
 import { BoardRole } from "@prisma/client";
 
 const ROLE_HIERARCHY : Record<BoardRole, number> = {

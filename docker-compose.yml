@@ -17,5 +17,17 @@ services:
       timeout: 5s
       retries: 5
 
+  backend:
+    build:
+      context: .
+      dockerfile: Backend/Dockerfile
+      target: production
+    image: flowboard-backend:latest
+    ports:
+      - "5000:5000"
+    env_file:
+      - Backend/.env
+    restart: unless-stopped
+
 volumes:
   postgres-data:

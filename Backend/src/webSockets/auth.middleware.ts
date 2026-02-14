@@ -1,5 +1,5 @@
 import { Socket } from "socket.io";
-import { verifyToken } from "../lib/auth";
+import { verifyToken } from "../lib/auth.js";
 
 export function authSocketMiddleware(socket: Socket, next: (err?: Error) => void) {
     const token = socket.handshake.auth.token;

@@ -1,7 +1,7 @@
 import { Socket, Server } from "socket.io";
 import { Card, Column } from "@prisma/client";
-import { ReorderCardsInput } from "../schemas/card.schema";
-import { ReorderColumnsInput } from "../schemas/column.schema";
+import { ReorderCardsInput } from "../schemas/card.schema.js";
+import { ReorderColumnsInput } from "../schemas/column.schema.js";
 type SuccessResponse = {
   success: true;
   resourceId: string;

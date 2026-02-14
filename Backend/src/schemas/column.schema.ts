@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { Prisma } from '@prisma/client';
 
 export const createColumnSchema = z.object({
   boardId: z.uuid('Invalid board ID'),

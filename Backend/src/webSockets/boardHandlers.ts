@@ -1,8 +1,8 @@
 import { Server, Socket } from "socket.io";
-import { getRoleByBoardId } from "../lib/permission.helper";
+import { getRoleByBoardId } from "../lib/permission.helper.js";
 import { BoardRole } from "@prisma/client";
-import { resourceLocks } from "./lockHandlers";
-import { activeDrags } from "./dragHandlers";
+import { resourceLocks } from "./lockHandlers.js";
+import { activeDrags } from "./dragHandlers.js";
 
 type SuccessResponse = {
   success: true;

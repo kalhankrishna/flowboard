@@ -1,5 +1,5 @@
 import { Socket, Server } from "socket.io";
-import { getRoleByBoardId, hasSufficientRole } from "../lib/permission.helper";
+import { getRoleByBoardId, hasSufficientRole } from "../lib/permission.helper.js";
 
 type SuccessResponse = {
   success: true;
