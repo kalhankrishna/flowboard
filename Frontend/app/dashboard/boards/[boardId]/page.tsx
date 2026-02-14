@@ -13,6 +13,7 @@ import CardModal from "@/components/CardModal";
 import ColumnModal from "@/components/ColumnModal";
 import { PresenceIndicator } from "@/components/PresenceIndicator";
 import RemoteDragOverlay from "@/components/RemoteDragOverlay";
+import LoadingOverlay from "@/components/LoadingOverlay";
 import { useBoard, useCards, useColumns, useSharing, useBoardRoom, useLock, useLockListeners, useUpdateListeners, useDragBroadcasts, useDragListeners } from "@/hooks";
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
@@ -24,6 +25,7 @@ import { BoardRole } from '@/types/share';
 import { PointerSensor, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { throttle } from "throttle-debounce";
 import Link from "next/link";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function BoardPage({ params }: { params: Promise<{ boardId: string }> }) {
   const { boardId } = React.use(params);
@@ -40,7 +42,7 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
   const queryClient = useQueryClient();
 
   const {getBoardQuery} = useBoard(boardId);
-  const {data: board, isLoading} = getBoardQuery;
+  const {data: board, isFetching} = getBoardQuery;
   const {addCardMutation, updateCardMutation, deleteCardMutation, reorderCardsMutation} = useCards(boardId);
   const { addColumnMutation, updateColumnMutation, deleteColumnMutation, reorderColumnsMutation } = useColumns(boardId);
 
@@ -113,9 +115,11 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
   addColumnMutation.isPending || updateColumnMutation.isPending || deleteColumnMutation.isPending || 
   reorderCardsMutation.isPending || reorderColumnsMutation.isPending);
 
-  //LOADING/ERROR STATES
-  if (isLoading) {
-    return <div className="p-8">Loading board...</div>;
+  const isLoading = isFetching || isPendingAnyMutation;
+
+  //LOADING/NOT FOUND
+  if (isFetching) {
+    return <LoadingOverlay isLoading={true} />;
   }
 
   if (!board) {
@@ -468,7 +472,11 @@ export default function BoardPage({ params }: { params: Promise<{ boardId: strin
           />
         )}
       </div>
+
+      <LoadingOverlay isLoading={isLoading} />
+
       <RemoteDragOverlay remoteDrags={remoteDrags} cards={remoteDraggedCards} columns={remoteDraggedColumns} />
+
       <DragOverlay>
         {activeId && findCard(activeId.toString()) && (
           <div className="bg-slate-100 rounded-md my-2 p-2 border border-gray-300 shadow-md opacity-50">

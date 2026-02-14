@@ -55,7 +55,7 @@ export function useColumns(boardId: string) {
     },
     
     onSuccess: (data) => {
-      queryClient.invalidateQueries({queryKey: queryKeys.board(boardId)});
+      //queryClient.invalidateQueries({queryKey: queryKeys.board(boardId)});
       toast.success('Column updated successfully');
       updateColumnBroadcast({boardId, updatedColumn: data});
     },
@@ -91,7 +91,7 @@ export function useColumns(boardId: string) {
     },
 
     onSuccess: (_data, variable) => {
-      queryClient.invalidateQueries({queryKey: queryKeys.board(boardId)});
+      //queryClient.invalidateQueries({queryKey: queryKeys.board(boardId)});
       toast.success('Column deleted successfully');
       deleteColumnBroadcast({boardId, columnId: variable});
     },
@@ -110,7 +110,7 @@ export function useColumns(boardId: string) {
     mutationFn: (data : ReorderColumn) => reorderColumn(data),
 
     onSuccess: (_data, variable) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
+      //queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
       reorderColumnsBroadcast({ boardId, reorderData: variable });
     },
 

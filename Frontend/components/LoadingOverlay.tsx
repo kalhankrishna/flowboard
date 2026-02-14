@@ -1,9 +1,12 @@
-export default function LoadingOverlay({ message = 'Saving...' }: { message?: string }) {
+import LoadingSpinner from '@/components/LoadingSpinner';
+
+export default function LoadingOverlay({ isLoading }: { isLoading: boolean }) {
+  if (!isLoading) return null;
+  
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 shadow-lg flex items-center gap-3">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-        <span className="text-gray-700 font-medium">{message}</span>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-400 pointer-events-auto">
+      <div className="flex flex-col items-center gap-3">
+        <LoadingSpinner />
       </div>
     </div>
   );

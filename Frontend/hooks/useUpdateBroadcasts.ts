@@ -17,10 +17,10 @@ type UpdateResponse = SuccessResponse | ErrorResponse;
 export const useUpdateBroadcasts = () => {
     const { socket } = useSocket();
 
-    const addCardBroadcast = useCallback(({boardId, card}: {boardId: string, card: Card}) => {
+    const addCardBroadcast = useCallback(({boardId, columnId, card}: {boardId: string, columnId: string, card: Card}) => {
         if (!socket) return;
         
-        socket.emit('ADD_CARD', {boardId, card}, (response: UpdateResponse) => {
+        socket.emit('ADD_CARD', {boardId, columnId, card}, (response: UpdateResponse) => {
             if (!response.success) {
                 console.error(response.error);
             }

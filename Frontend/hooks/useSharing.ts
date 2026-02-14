@@ -12,6 +12,7 @@ export function useSharing(boardId: string) {
         queryKey: queryKeys.collaborators(boardId),
         queryFn: () => getBoardCollaborators(boardId),
         enabled: !!boardId,
+        throwOnError: true,
     });
 
     // Share Board
@@ -85,7 +86,7 @@ export function useSharing(boardId: string) {
             toast.success('Collaborator removed');
         },
 
-        onError: (error, variables, context) => {
+        onError: (error, _variable, context) => {
             console.error('Failed to remove collaborator:', error);
             toast.error('Failed to remove collaborator');
             if (context?.previous) {

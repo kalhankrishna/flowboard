@@ -12,7 +12,7 @@ export default function NotFound() {
         </p>
         <Link
           href="/dashboard"
-          className="inline-block rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700"
+          className="inline-block rounded-lg bg-cyan-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-cyan-400"
         >
           ← Back to boards
         </Link>

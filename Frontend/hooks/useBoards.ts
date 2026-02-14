@@ -56,8 +56,8 @@ export function useBoard(boardId: string) {
     },
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.boards() });
+      // queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
+      // queryClient.invalidateQueries({ queryKey: queryKeys.boards() });
       toast.success('Board updated successfully');
     },
 
@@ -132,14 +132,15 @@ export function useBoards(){
   const addBoardMutation = useMutation({
     mutationFn: (name: string) => addBoard(name),
 
-    onSuccess: (data) => {
-      queryClient.setQueryData(queryKeys.boards(), (old: CategorizedBoards | undefined) => {
-        if (!old) return old;
-        return {
-          ownedBoards: [...old.ownedBoards, data],
-          sharedBoards: old.sharedBoards
-        };
-      });
+    onSuccess: () => {
+      // queryClient.setQueryData(queryKeys.boards(), (old: CategorizedBoards | undefined) => {
+      //   if (!old) return old;
+      //   return {
+      //     ownedBoards: [...old.ownedBoards, data],
+      //     sharedBoards: old.sharedBoards
+      //   };
+      // });
+      queryClient.invalidateQueries({ queryKey: queryKeys.boards() });
       toast.success('Board created successfully');
     },
 

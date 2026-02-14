@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { useBoards } from '@/hooks';
 import BoardCard from '@/components/BoardCard';
 import BoardModal from '@/components/BoardModal';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import {Plus} from 'lucide-react';
 
 export default function DashboardPage() {
   const { getBoardsQuery, addBoardMutation } = useBoards();
-  const { data, isLoading } = getBoardsQuery;
+  const { data, isFetching } = getBoardsQuery;
   
   const [boardModal, setBoardModal] = useState<{ 
     open: boolean; 
@@ -52,16 +54,20 @@ export default function DashboardPage() {
     addBoardMutation.mutate(name);
   }
 
-  if (isLoading) {
+  const { ownedBoards, sharedBoards } = data || { ownedBoards: [], sharedBoards: [] };
+  const hasNoBoards = ownedBoards.length === 0 && sharedBoards.length === 0;
+
+  const isLoading = addBoardMutation.isPending || updateIsPending || deleteIsPending;
+
+  if(isFetching){
     return (
-      <div className="flex items-center justify-center min-h-100">
-        <div className="text-gray-600">Loading boards...</div>
+      <div className="fixed inset-0 bg-linear-to-br from-slate-50 to-stone-100 flex items-center justify-center z-400 pointer-events-auto">
+        <div className="flex flex-col items-center gap-3">
+          <LoadingSpinner />
+        </div>
       </div>
     );
   }
-
-  const { ownedBoards, sharedBoards } = data || { ownedBoards: [], sharedBoards: [] };
-  const hasNoBoards = ownedBoards.length === 0 && sharedBoards.length === 0;
 
   return (
     <div className='pl-8 pr-8'>
@@ -72,7 +78,7 @@ export default function DashboardPage() {
         </div>
         <button 
           onClick={() => openAddBoardModal()}
-          disabled={addBoardMutation.isPending || updateIsPending || deleteIsPending}
+          disabled={isLoading}
           className="bg-cyan-500 text-white flex items-center justify-center gap-2 px-2 py-2 rounded-md hover:bg-cyan-400 hover:cursor-pointer transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span className='inline-block'><Plus /></span>
@@ -85,8 +91,8 @@ export default function DashboardPage() {
           <p className="text-gray-600 mb-4">You don&apos;t have any boards yet.</p>
           <button 
             onClick={() => openAddBoardModal()}
-            disabled={addBoardMutation.isPending || updateIsPending || deleteIsPending}
-            className="bg-cyan-500 text-white px-4 py-2 rounded-md hover:bg-cyan-400 hover:cursor-pointer transition"
+            disabled={isLoading}
+            className="bg-cyan-500 text-white px-4 py-2 rounded-md hover:bg-cyan-400 hover:cursor-pointer transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Create Your First Board
           </button>
@@ -145,6 +151,8 @@ export default function DashboardPage() {
           isDeletingBoard={deleteIsPending}
         />
       )}
+
+      <LoadingOverlay isLoading={isFetching} />
     </div>
   );
 }

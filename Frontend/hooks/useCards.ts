@@ -18,7 +18,7 @@ export function useCards(boardId: string) {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
       toast.success('Card added successfully');
-      addCardBroadcast({ boardId, card: data });
+      addCardBroadcast({ boardId, columnId: data.columnId, card: data });
     },
     
     onError: (error) => {
@@ -59,7 +59,7 @@ export function useCards(boardId: string) {
     },
     
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
+      //queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
       toast.success('Card updated successfully');
       updateCardBroadcast({ boardId, updatedCard: data });
     },
@@ -98,7 +98,7 @@ export function useCards(boardId: string) {
     },
 
     onSuccess: (_data, variable) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
+      //queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
       toast.success('Card deleted successfully');
       deleteCardBroadcast({ boardId, cardId: variable });
     },
@@ -117,7 +117,7 @@ export function useCards(boardId: string) {
     mutationFn: (data: ReorderCard) => reorderCard(data),
     
     onSuccess: (_data, variable) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
+      //queryClient.invalidateQueries({ queryKey: queryKeys.board(boardId) });
       reorderCardsBroadcast({ boardId, reorderData: variable });
     },
 
