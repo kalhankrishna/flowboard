@@ -7,7 +7,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "npx prisma generate && tsc",
     "start": "node dist/index.js",
-	"prisma:generate": "npx prisma generate",
+	  "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate deploy"
   },
   "dependencies": {
