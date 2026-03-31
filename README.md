@@ -69,6 +69,7 @@ Create `.env` files using the provided `.env.example` files, then run migrations
 
 ```bash
 pnpm --filter @flowboard/backend run prisma:migrate
+pnpm --filter @flowboard/backend run prisma:generate
 ```
 
 Start services:
