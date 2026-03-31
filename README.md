@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FlowBoard
 
-## Getting Started
+**Live:** [flowboard-frontend-three.vercel.app](https://flowboard-frontend-three.vercel.app)
 
-First, run the development server:
+A real-time collaborative Kanban board. Create fully customisable boards, drag and drop cards and columns, and collaborate with others live. Share boards with role-based access control — owners, editors, and viewers.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## What This Demonstrates
+
+| Concern | Implementation |
+|---|---|
+| Real-time collaboration | Socket.IO — board state broadcast to all connected clients instantly |
+| Live drag broadcasts | Drag events streamed to all clients in real time — other users see cards moving as you drag |
+| Drag and drop | dnd-kit with live overlays, fractional positioning for conflict-free ordering |
+| Pessimistic locking | Server-side lock acquisition before mutations — prevents lost updates under concurrent edits |
+| RBAC | Owner / Editor / Viewer roles enforced at API and socket layer |
+| Auth | JWT dual-token (access + refresh), HttpOnly cookies, token rotation |
+| Optimistic UI | TanStack Query mutation lifecycle — UI updates instantly, rolls back on failure |
+
+---
+
+## Architecture
+
+```
+Browser A          Browser B
+    │                  │
+    │   Socket.IO       │
+    └──────┬───────────┘
+           │
+    Express + Socket.IO (5000)
+           │
+      PostgreSQL
+      (Prisma v6)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Backend on DigitalOcean VPS via PM2. Postgres in Docker. Frontend on Vercel.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Tech Stack
 
-## Learn More
+| Layer | Tech |
+|---|---|
+| Frontend | Next.js (App Router), TanStack Query, Zustand, dnd-kit |
+| Backend | Express, Socket.IO |
+| Database | PostgreSQL + Prisma v6 |
+| Auth | JWT access + refresh tokens, HttpOnly cookies |
+| Infra | DigitalOcean VPS, Caddy, PM2 |
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Running Locally
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Prerequisites
 
-## Deploy on Vercel
+- Node.js 24+, pnpm, Docker
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Setup
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+git clone https://github.com/yourusername/flowboard.git
+cd flowboard
+pnpm install
+docker compose up -d
+```
+
+Create `.env` files using the provided `.env.example` files, then run migrations:
+
+```bash
+pnpm --filter @flowboard/backend run prisma:migrate
+```
+
+Start services:
+
+```bash
+pnpm --filter @flowboard/backend run dev
+pnpm --filter @flowboard/frontend run dev
+```
+
+Frontend at `http://localhost:3000`, backend at `http://localhost:5000`.
